@@ -1,0 +1,33 @@
+log_level: info
+
+storage:
+  # Storage path inside the container
+  storage_path: ./storage
+  
+  # Snapshots configuration
+  snapshots_path: ./snapshots
+  
+  # Write-ahead log configuration
+  wal:
+    wal_capacity_mb: 200
+    wal_segments_ahead: 0
+
+http:
+  # API port
+  port: 6333
+
+grpc:
+  # gRPC port
+  port: 6334
+
+# Performance tuning
+performance:
+  # Maximum number of parallel operations per shard
+  max_concurrent_requests: 100
+
+# Telemetry
+telemetry_disabled: false
+
+# Cluster configuration (for future multi-node setup)
+cluster:
+  enabled: false

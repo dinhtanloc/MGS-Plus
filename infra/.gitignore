@@ -1,0 +1,43 @@
+# Environment Configuration
+# Sensitive data - NEVER COMMIT
+.env.local
+.env.*.local
+.env
+
+# Docker volumes and data
+docker/volumes/
+docker/qdrant_data/
+docker/postgres_data/
+docker/sqlserver_data/
+
+# Terraform
+terraform/*.tfstate
+terraform/*.tfstate.*
+terraform/.terraform/
+terraform/.terraform.lock.hcl
+terraform/terraform.tfvars
+terraform/terraform.tfvars.json
+
+# Kubernetes
+k8s/*.local.yml
+k8s/*.local.yaml
+
+# Docker build cache
+.docker/
+.dockerignore_local
+
+# Log files
+*.log
+logs/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+.env_*
