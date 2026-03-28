@@ -3,7 +3,7 @@
 FROM mcr.microsoft.com/mssql/server:2022-latest
 
 # Build arguments for sensitive data (pass via --build-arg or runtime ENV)
-ARG SA_PASSWORD="DefaultPassword@123"
+ARG SA_PASSWORD=""
 ARG SQL_ADMIN_USER="sa"
 ARG ACCEPT_EULA="N"
 
