@@ -1,0 +1,98 @@
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using MGSPlus.Api.Data;
+using MGSPlus.Api.DTOs;
+using MGSPlus.Api.Services;
+
+namespace MGSPlus.Api.Controllers;
+
+[ApiController]
+[Route("api/[controller]")]
+[Produces("application/json")]
+public class ChatbotController : ControllerBase
+{
+    private readonly ApplicationDbContext _db;
+    private readonly JwtService _jwt;
+    private readonly ChatbotService _chatbot;
+
+    public ChatbotController(ApplicationDbContext db, JwtService jwt, ChatbotService chatbot)
+    {
+        _db = db;
+        _jwt = jwt;
+        _chatbot = chatbot;
+    }
+
+    /// <summary>Tạo phiên chat mới</summary>
+    [HttpPost("sessions")]
+    public async Task<IActionResult> CreateSession([FromBody] CreateChatSessionRequest req)
+    {
+        var userId = _jwt.GetUserIdFromToken(User);
+        var session = await _chatbot.CreateSessionAsync(userId, req);
+        return CreatedAtAction(nameof(GetSession), new { id = session.Id },
+            new ChatSessionDto(session.Id, session.Title, session.SessionType, 0, session.CreatedAt, session.UpdatedAt));
+    }
+
+    /// <summary>Lấy danh sách phiên chat</summary>
+    [HttpGet("sessions")]
+    [Authorize]
+    public async Task<IActionResult> GetSessions()
+    {
+        var userId = _jwt.GetUserIdFromToken(User);
+        var sessions = await _db.ChatSessions
+            .Where(s => s.UserId == userId)
+            .OrderByDescending(s => s.UpdatedAt)
+            .Select(s => new ChatSessionDto(
+                s.Id, s.Title, s.SessionType,
+                s.Messages.Count, s.CreatedAt, s.UpdatedAt))
+            .Take(20)
+            .ToListAsync();
+
+        return Ok(sessions);
+    }
+
+    /// <summary>Chi tiết phiên chat + lịch sử tin nhắn</summary>
+    [HttpGet("sessions/{id}")]
+    public async Task<IActionResult> GetSession(int id)
+    {
+        var userId = _jwt.GetUserIdFromToken(User);
+        var session = await _db.ChatSessions
+            .Include(s => s.Messages.OrderBy(m => m.CreatedAt))
+            .FirstOrDefaultAsync(s => s.Id == id && (s.UserId == null || s.UserId == userId));
+
+        if (session == null) return NotFound();
+
+        return Ok(new
+        {
+            session = new ChatSessionDto(session.Id, session.Title, session.SessionType,
+                session.Messages.Count, session.CreatedAt, session.UpdatedAt),
+            messages = session.Messages.Select(m => new ChatMessageDto(m.Id, m.Role, m.Content, m.CreatedAt))
+        });
+    }
+
+    /// <summary>Gửi tin nhắn đến chatbot</summary>
+    [HttpPost("sessions/{id}/messages")]
+    public async Task<IActionResult> SendMessage(int id, [FromBody] SendMessageRequest req)
+    {
+        var userId = _jwt.GetUserIdFromToken(User);
+        try
+        {
+            var response = await _chatbot.SendMessageAsync(id, userId, req);
+            return Ok(response);
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound();
+        }
+    }
+
+    /// <summary>Chat nhanh (không cần tạo session trước)</summary>
+    [HttpPost("quick")]
+    public async Task<IActionResult> QuickChat([FromBody] SendMessageRequest req)
+    {
+        var userId = _jwt.GetUserIdFromToken(User);
+        var session = await _chatbot.CreateSessionAsync(userId, new CreateChatSessionRequest("Quick Chat"));
+        var response = await _chatbot.SendMessageAsync(session.Id, userId, req);
+        return Ok(new { sessionId = session.Id, response });
+    }
+}
