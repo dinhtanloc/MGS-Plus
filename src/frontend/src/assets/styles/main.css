@@ -1,0 +1,44 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    @apply text-gray-800 bg-gray-50;
+  }
+  h1, h2, h3, h4, h5, h6 { @apply font-semibold; }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-blue-600 hover:bg-blue-700 text-white font-medium px-5 py-2.5 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2;
+  }
+  .btn-secondary {
+    @apply bg-white hover:bg-gray-50 text-gray-700 font-medium px-5 py-2.5 rounded-lg border border-gray-300 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gray-300;
+  }
+  .btn-danger {
+    @apply bg-red-600 hover:bg-red-700 text-white font-medium px-5 py-2.5 rounded-lg transition-colors duration-200;
+  }
+  .card {
+    @apply bg-white rounded-xl shadow-sm border border-gray-100 p-6;
+  }
+  .input-field {
+    @apply w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all;
+  }
+  .badge-success { @apply bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full; }
+  .badge-warning { @apply bg-yellow-100 text-yellow-800 text-xs font-medium px-2.5 py-0.5 rounded-full; }
+  .badge-danger  { @apply bg-red-100 text-red-800 text-xs font-medium px-2.5 py-0.5 rounded-full; }
+  .badge-info    { @apply bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full; }
+}
+
+/* Chatbot widget animations */
+.chatbot-enter-active, .chatbot-leave-active { transition: all 0.3s ease; }
+.chatbot-enter-from, .chatbot-leave-to { opacity: 0; transform: translateY(20px) scale(0.95); }
+
+/* Scroll bar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { @apply bg-gray-100; }
+::-webkit-scrollbar-thumb { @apply bg-gray-300 rounded; }
+::-webkit-scrollbar-thumb:hover { @apply bg-gray-400; }
