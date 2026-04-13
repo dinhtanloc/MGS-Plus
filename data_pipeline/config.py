@@ -10,11 +10,11 @@ with open(here("configs/data-pipeline-configs.yml")) as cfg:
     app_config = yaml.load(cfg, Loader=yaml.FullLoader)
 
 
-class LoadDEConffig:
+class LoadDEConfig:
     def __init__(self) -> None:
         self.kaggle_name = os.getenv("KAGGLE_USERNAME")
         self.kaggle_key = os.getenv("KAGGLE_KEY")
 
         self.kaggle_config = app_config["kaggle"]["config_dir"]
 
-LoadDEConffig = LoadDEConffig()
+LoadDEConfig = LoadDEConfig()

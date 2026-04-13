@@ -5,7 +5,7 @@ from pathlib import Path
 import shutil
 
 from configs.global_config import exps_dir, data_dir
-from data_pipeline.config import LoadDEConffig
+from data_pipeline.config import LoadDEConfig
 
 class KaggleHubDatasetManager:
     def __init__(self, dataset: str, download_dir: str):
@@ -16,7 +16,7 @@ class KaggleHubDatasetManager:
         """
         self.dataset = dataset
         self.download_dir = Path(download_dir)
-        os.environ["KAGGLE_CONFIG_DIR"] = LoadDEConffig.kaggle_config
+        os.environ["KAGGLE_CONFIG_DIR"] = LoadDEConfig.kaggle_config
 
     def download(self, force: bool = False):
         """
