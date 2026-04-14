@@ -1,0 +1,15 @@
+# ==============================================================
+# MGSPlus — Frontend Configuration (Vue 3 + Vite)
+# Dev server port, API routing.
+# Runtime env vars (VITE_*) live in root .env.
+# ==============================================================
+
+# ── Dev server ─────────────────────────────────────────────────
+service:
+  host: frontend
+  port: 3000              # override with FRONTEND_PORT
+
+# ── API routing (used by Vite dev proxy) ──────────────────────
+api:
+  base_url: /api          # override with VITE_API_BASE_URL
+  ws_url: ws://localhost:5000   # override with VITE_WS_URL

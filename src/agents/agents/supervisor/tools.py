@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import concurrent.futures
 from typing import Any, Optional, Type
 
 from crewai.tools import BaseTool
@@ -8,6 +9,19 @@ from pydantic import BaseModel, Field
 
 from src.agents.core.a2a.client import A2AClient
 from src.agents.core.config import Settings, get_settings
+
+
+def _run_async(coro):
+    """Run an async coroutine safely even when an event loop is already running.
+
+    CrewAI tool._run() is synchronous, but uvicorn's event loop is already
+    active.  Calling asyncio.get_event_loop().run_until_complete() on a
+    running loop raises RuntimeError.  Instead, we spin up a fresh thread
+    (with its own event loop) via asyncio.run().
+    """
+    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+        future = pool.submit(asyncio.run, coro)
+        return future.result()
 
 
 class RouteToDocumentsInput(BaseModel):
@@ -41,7 +55,7 @@ class RouteToDocumentsTool(BaseTool):
         self._a2a = A2AClient()
 
     def _run(self, question: str, thread_id: str, user_id: str = "anonymous") -> str:
-        result = asyncio.get_event_loop().run_until_complete(
+        result = _run_async(
             self._a2a.send_task(
                 base_url=self._settings.documents_base_url,
                 question=question,
@@ -70,7 +84,7 @@ class RouteToWorkflowTool(BaseTool):
         self._a2a = A2AClient()
 
     def _run(self, question: str, thread_id: str, user_id: str = "anonymous") -> str:
-        result = asyncio.get_event_loop().run_until_complete(
+        result = _run_async(
             self._a2a.send_task(
                 base_url=self._settings.workflow_base_url,
                 question=question,

@@ -1,0 +1,250 @@
+# MGSPlus — Docker Compose (all services)
+#
+# Single env source: ../.env  (project root)
+# Run from project root:
+#   docker compose -f infra/docker-compose.yml up
+# Or from infra/ dir:
+#   docker compose up
+#
+# Selective start:
+#   docker compose -f infra/docker-compose.yml up sqlserver qdrant neo4j
+
+name: ${COMPOSE_PROJECT_NAME:-mgsplus}
+
+# ── Shared config ──────────────────────────────────────────────────────────────
+x-env: &env
+  env_file:
+    - ../.env                # ← project root .env (single source of truth)
+
+x-restart: &restart
+  restart: unless-stopped
+
+x-logging: &logging
+  logging:
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-file: "3"
+
+# ── Networks ───────────────────────────────────────────────────────────────────
+networks:
+  mgs-net:
+    driver: bridge
+
+# ── Volumes ────────────────────────────────────────────────────────────────────
+volumes:
+  sqlserver-data:
+  qdrant-data:
+  neo4j-data:
+  neo4j-logs:
+
+# ── Services ───────────────────────────────────────────────────────────────────
+services:
+
+  # ── SQL Server ────────────────────────────────────────────────────────────────
+  sqlserver:
+    build:
+      context: docker/services/sqlserver
+      dockerfile: Dockerfile
+    image: ${COMPOSE_PROJECT_NAME:-mgsplus}-sqlserver:latest
+    <<: [*env, *restart, *logging]
+    environment:
+      # Runtime secrets from env_file above
+      ACCEPT_EULA: ${ACCEPT_EULA:-Y}
+      MSSQL_SA_PASSWORD: ${SA_PASSWORD}
+      SA_PASSWORD: ${SA_PASSWORD}
+    ports:
+      - "${SQLSERVER_PORT:-1433}:1433"
+    volumes:
+      - sqlserver-data:/var/opt/mssql/data
+    networks:
+      - mgs-net
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"${SA_PASSWORD}\" -C -Q 'SELECT 1' -b -o /dev/null"]
+      interval: 30s
+      timeout: 15s
+      start_period: 60s
+      retries: 5
+
+  # ── Qdrant ────────────────────────────────────────────────────────────────────
+  qdrant:
+    build:
+      context: docker/services/qdrant
+      dockerfile: Dockerfile
+    image: ${COMPOSE_PROJECT_NAME:-mgsplus}-qdrant:latest
+    <<: [*env, *restart, *logging]
+    environment:
+      # Qdrant reads API key from these env vars at runtime
+      QDRANT__SERVICE__API_KEY: ${QDRANT_API_KEY}
+      QDRANT__SERVICE__READ_ONLY_API_KEY: ${QDRANT_READ_ONLY_API_KEY}
+    ports:
+      - "${QDRANT_PORT:-6333}:6333"
+      - "${QDRANT_GRPC_PORT:-6334}:6334"
+    volumes:
+      - qdrant-data:/qdrant/storage
+    networks:
+      - mgs-net
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:6333/readyz"]
+      interval: 30s
+      timeout: 10s
+      start_period: 10s
+      retries: 3
+
+  # ── Neo4j ─────────────────────────────────────────────────────────────────────
+  neo4j:
+    build:
+      context: docker/services/neo4j
+      dockerfile: Dockerfile
+    image: ${COMPOSE_PROJECT_NAME:-mgsplus}-neo4j:latest
+    <<: [*env, *restart, *logging]
+    environment:
+      # Construct NEO4J_AUTH from env vars at runtime
+      NEO4J_AUTH: ${NEO4J_USER:-neo4j}/${NEO4J_PASSWORD}
+    ports:
+      - "${NEO4J_HTTP_PORT:-7474}:7474"
+      - "${NEO4J_BOLT_PORT:-7687}:7687"
+    volumes:
+      - neo4j-data:/data
+      - neo4j-logs:/logs
+    networks:
+      - mgs-net
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:7474"]
+      interval: 30s
+      timeout: 10s
+      start_period: 60s
+      retries: 5
+
+  # ── Backend (ASP.NET Core) ────────────────────────────────────────────────────
+  backend:
+    build:
+      context: ../src/backend
+      dockerfile: Dockerfile
+    image: ${COMPOSE_PROJECT_NAME:-mgsplus}-backend:latest
+    <<: [*env, *restart, *logging]
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
+      ASPNETCORE_URLS: http://+:5000
+      SQLSERVER_HOST: sqlserver          # use docker service name inside network
+      QDRANT_HOST: qdrant
+      NEO4J_URI: bolt://neo4j:7687
+    ports:
+      - "${BACKEND_PORT:-5000}:5000"
+    networks:
+      - mgs-net
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      start_period: 30s
+      retries: 3
+
+  # ── Supervisor Agent ──────────────────────────────────────────────────────────
+  agents-supervisor:
+    build:
+      context: ..                         # project root
+      dockerfile: infra/docker/services/agents/Dockerfile
+      args:
+        AGENT: supervisor
+    image: ${COMPOSE_PROJECT_NAME:-mgsplus}-agents-supervisor:latest
+    <<: [*env, *restart, *logging]
+    environment:
+      AGENT: supervisor
+      SQLSERVER_HOST: sqlserver
+      QDRANT_HOST: qdrant
+      NEO4J_URI: bolt://neo4j:7687
+      DOCUMENTS_PORT: ${DOCUMENTS_PORT:-8011}
+      WORKFLOW_PORT: ${WORKFLOW_PORT:-8012}
+    ports:
+      - "${SUPERVISOR_PORT:-8010}:8010"
+    networks:
+      - mgs-net
+    depends_on:
+      - sqlserver
+      - qdrant
+    healthcheck:
+      test: ["CMD", "python", "-c", "import httpx; httpx.get('http://localhost:8010/health').raise_for_status()"]
+      interval: 30s
+      timeout: 10s
+      start_period: 20s
+      retries: 3
+
+  # ── Documents Agent ───────────────────────────────────────────────────────────
+  agents-documents:
+    build:
+      context: ..
+      dockerfile: infra/docker/services/agents/Dockerfile
+      args:
+        AGENT: documents
+    image: ${COMPOSE_PROJECT_NAME:-mgsplus}-agents-documents:latest
+    <<: [*env, *restart, *logging]
+    environment:
+      AGENT: documents
+      SQLSERVER_HOST: sqlserver
+      QDRANT_HOST: qdrant
+      NEO4J_URI: bolt://neo4j:7687
+    ports:
+      - "${DOCUMENTS_PORT:-8011}:8011"
+    networks:
+      - mgs-net
+    depends_on:
+      - qdrant
+    healthcheck:
+      test: ["CMD", "python", "-c", "import httpx; httpx.get('http://localhost:8011/health').raise_for_status()"]
+      interval: 30s
+      timeout: 10s
+      start_period: 20s
+      retries: 3
+
+  # ── Workflow Agent ────────────────────────────────────────────────────────────
+  agents-workflow:
+    build:
+      context: ..
+      dockerfile: infra/docker/services/agents/Dockerfile
+      args:
+        AGENT: workflow
+    image: ${COMPOSE_PROJECT_NAME:-mgsplus}-agents-workflow:latest
+    <<: [*env, *restart, *logging]
+    environment:
+      AGENT: workflow
+      SQLSERVER_HOST: sqlserver
+    ports:
+      - "${WORKFLOW_PORT:-8012}:8012"
+    networks:
+      - mgs-net
+    depends_on:
+      - sqlserver
+    healthcheck:
+      test: ["CMD", "python", "-c", "import httpx; httpx.get('http://localhost:8012/health').raise_for_status()"]
+      interval: 30s
+      timeout: 10s
+      start_period: 20s
+      retries: 3
+
+  # ── Frontend (Nginx) ──────────────────────────────────────────────────────────
+  frontend:
+    build:
+      context: ..
+      dockerfile: infra/docker/services/frontend/Dockerfile
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-/api}
+        VITE_BACKEND_URL: ${VITE_BACKEND_URL:-http://localhost:5000}
+        VITE_WS_URL: ${VITE_WS_URL:-ws://localhost:5000}
+    image: ${COMPOSE_PROJECT_NAME:-mgsplus}-frontend:latest
+    <<: [*restart, *logging]
+    ports:
+      - "${FRONTEND_PORT:-3000}:80"
+    networks:
+      - mgs-net
+    depends_on:
+      - backend
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost/"]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3

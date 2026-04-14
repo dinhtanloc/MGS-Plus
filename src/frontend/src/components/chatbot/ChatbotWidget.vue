@@ -4,7 +4,7 @@
     <!-- Chat panel -->
     <Transition name="chatbot">
       <div v-if="chatbot.isOpen"
-        class="w-80 sm:w-96 h-[500px] bg-white rounded-2xl shadow-2xl border border-gray-200 flex flex-col overflow-hidden">
+        class="w-80 sm:w-96 h-[560px] bg-white rounded-2xl shadow-2xl border border-gray-200 flex flex-col overflow-hidden">
         <!-- Header -->
         <div class="bg-gradient-to-r from-blue-600 to-blue-700 px-4 py-3 flex items-center justify-between shrink-0">
           <div class="flex items-center gap-2">
@@ -38,27 +38,84 @@
         <div ref="messagesContainer" class="flex-1 overflow-y-auto px-4 py-3 space-y-3">
           <div v-for="(msg, i) in chatbot.messages" :key="i"
             :class="['flex', msg.role === 'user' ? 'justify-end' : 'justify-start']">
-            <div v-if="msg.role === 'assistant'" class="flex items-end gap-2">
-              <div class="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center shrink-0">
+
+            <!-- ── Assistant message ── -->
+            <div v-if="msg.role === 'assistant'" class="flex items-start gap-2 max-w-[88%]">
+              <div class="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center shrink-0 mt-1">
                 <svg class="w-3 h-3 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M12 2a10 10 0 100 20A10 10 0 0012 2zm0 3a1 1 0 110 2 1 1 0 010-2zm0 4a1 1 0 011 1v6a1 1 0 11-2 0v-6a1 1 0 011-1z"/>
                 </svg>
               </div>
-              <div class="max-w-[80%] bg-gray-100 text-gray-800 rounded-2xl rounded-bl-none px-3 py-2 text-sm leading-relaxed">
-                {{ msg.content }}
+
+              <div class="flex flex-col gap-1.5 min-w-0">
+                <!-- Reasoning block -->
+                <div v-if="msg.reasoning && msg.reasoning.length > 0"
+                  class="rounded-xl border border-gray-200 bg-gray-50 text-xs overflow-hidden">
+                  <button
+                    @click="chatbot.toggleReasoning(i)"
+                    class="w-full flex items-center gap-1.5 px-3 py-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors text-left">
+                    <!-- Brain / spinner icon -->
+                    <span v-if="msg.isStreaming" class="shrink-0">
+                      <svg class="w-3 h-3 text-purple-500 animate-spin" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                      </svg>
+                    </span>
+                    <span v-else class="text-purple-500 shrink-0">🧠</span>
+                    <span class="font-medium text-purple-700">
+                      {{ msg.isStreaming ? 'Đang phân tích...' : `Đã phân tích (${msg.reasoning.length} bước)` }}
+                    </span>
+                    <svg v-if="!msg.isStreaming"
+                      :class="['w-3 h-3 ml-auto shrink-0 transition-transform', msg.reasoningOpen ? 'rotate-180' : '']"
+                      fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                  </button>
+
+                  <Transition name="reasoning">
+                    <div v-if="msg.reasoningOpen" class="px-3 pb-2 space-y-1.5 max-h-40 overflow-y-auto">
+                      <div v-for="(step, si) in msg.reasoning" :key="si">
+                        <!-- Tool call step -->
+                        <div v-if="step.type === 'tool_call'"
+                          class="flex items-start gap-1.5 text-blue-600">
+                          <span class="shrink-0 mt-0.5">→</span>
+                          <span class="font-mono text-[10px] leading-relaxed break-all">
+                            {{ step.tool ?? 'tool' }}
+                            <span v-if="step.content" class="text-gray-400 font-sans">: {{ step.content.slice(0, 80) }}</span>
+                          </span>
+                        </div>
+                        <!-- Reasoning step -->
+                        <div v-else class="text-gray-500 leading-relaxed">
+                          {{ step.content.slice(0, 200) }}
+                        </div>
+                      </div>
+                    </div>
+                  </Transition>
+                </div>
+
+                <!-- Response text -->
+                <div v-if="msg.content || msg.isStreaming"
+                  class="bg-gray-100 text-gray-800 rounded-2xl rounded-tl-none px-3 py-2 text-sm leading-relaxed break-words">
+                  <span>{{ msg.content }}</span>
+                  <!-- Blinking cursor while streaming -->
+                  <span v-if="msg.isStreaming && msg.content"
+                    class="inline-block w-0.5 h-3.5 bg-gray-600 ml-0.5 align-middle animate-pulse"/>
+                </div>
+
+                <!-- Empty loading state (no content yet) -->
+                <div v-if="msg.isStreaming && !msg.content && (!msg.reasoning || msg.reasoning.length === 0)"
+                  class="bg-gray-100 rounded-2xl rounded-tl-none px-4 py-3 flex items-center gap-1">
+                  <span class="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style="animation-delay:0ms"/>
+                  <span class="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style="animation-delay:150ms"/>
+                  <span class="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style="animation-delay:300ms"/>
+                </div>
               </div>
             </div>
-            <div v-else class="max-w-[80%] bg-blue-600 text-white rounded-2xl rounded-br-none px-3 py-2 text-sm leading-relaxed">
-              {{ msg.content }}
-            </div>
-          </div>
 
-          <!-- Typing indicator -->
-          <div v-if="chatbot.loading" class="flex justify-start">
-            <div class="bg-gray-100 rounded-2xl rounded-bl-none px-4 py-3 flex items-center gap-1">
-              <span class="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style="animation-delay:0ms"></span>
-              <span class="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style="animation-delay:150ms"></span>
-              <span class="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style="animation-delay:300ms"></span>
+            <!-- ── User message ── -->
+            <div v-else
+              class="max-w-[80%] bg-blue-600 text-white rounded-2xl rounded-br-none px-3 py-2 text-sm leading-relaxed">
+              {{ msg.content }}
             </div>
           </div>
 
@@ -131,7 +188,6 @@ async function handleSend() {
   if (!text) return
   inputText.value = ''
   await chatbot.sendMessage(text)
-  await scrollToBottom()
 }
 
 function sendQuick(question: string) {
@@ -146,5 +202,37 @@ async function scrollToBottom() {
   }
 }
 
-watch(() => chatbot.messages.length, scrollToBottom)
+// Scroll on new messages and while streaming content updates
+watch(
+  () => chatbot.messages.map(m => m.content + (m.reasoning?.length ?? 0)).join(''),
+  scrollToBottom
+)
 </script>
+
+<style scoped>
+.reasoning-enter-active,
+.reasoning-leave-active {
+  transition: max-height 0.2s ease, opacity 0.2s ease;
+  overflow: hidden;
+}
+.reasoning-enter-from,
+.reasoning-leave-to {
+  max-height: 0;
+  opacity: 0;
+}
+.reasoning-enter-to,
+.reasoning-leave-from {
+  max-height: 160px;
+  opacity: 1;
+}
+
+.chatbot-enter-active,
+.chatbot-leave-active {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.chatbot-enter-from,
+.chatbot-leave-to {
+  opacity: 0;
+  transform: translateY(12px) scale(0.97);
+}
+</style>

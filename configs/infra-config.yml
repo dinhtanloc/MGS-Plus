@@ -1,0 +1,31 @@
+# ==============================================================
+# MGSPlus — Infrastructure Configuration
+# Databases, message brokers, monitoring ports.
+# Secrets (passwords, API keys) live in root .env.
+# ==============================================================
+
+# ── Databases ─────────────────────────────────────────────────
+databases:
+  sqlserver:
+    host: sqlserver         # Docker service name; override with SQLSERVER_HOST
+    port: 1433
+    name: mgsplus_db        # override with SQLSERVER_DB
+
+  qdrant:
+    host: qdrant            # Docker service name; override with QDRANT_HOST
+    port: 6333
+    grpc_port: 6334
+    vector_size: 1536
+    shared_collection: knowledge_shared
+
+  neo4j:
+    host: neo4j             # Docker service name; override with NEO4J_URI
+    bolt_port: 7687
+    http_port: 7474
+
+# ── Monitoring ports ───────────────────────────────────────────
+monitoring:
+  jenkins_port: 8080
+  jenkins_agent_port: 50000
+  locust_web_port: 8089
+  qdrant_metrics_port: 9090

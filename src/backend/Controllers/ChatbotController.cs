@@ -86,6 +86,36 @@ public class ChatbotController : ControllerBase
         }
     }
 
+    /// <summary>Streaming chat — trả về SSE với reasoning của agents</summary>
+    [HttpPost("sessions/{id}/messages/stream")]
+    public async Task StreamMessage(int id, [FromBody] SendMessageRequest req, CancellationToken ct)
+    {
+        var userId = _jwt.GetUserIdFromToken(User);
+
+        Response.ContentType = "text/event-stream";
+        Response.Headers["Cache-Control"] = "no-cache";
+        Response.Headers["X-Accel-Buffering"] = "no"; // disable nginx buffering
+        Response.Headers["Connection"] = "keep-alive";
+
+        try
+        {
+            await foreach (var eventData in _chatbot.StreamMessageAsync(id, userId, req, ct))
+            {
+                await Response.WriteAsync($"data: {eventData}\n\n", ct);
+                await Response.Body.FlushAsync(ct);
+            }
+        }
+        catch (KeyNotFoundException)
+        {
+            await Response.WriteAsync("data: {\"type\":\"error\",\"content\":\"Session not found\"}\n\n", ct);
+            await Response.Body.FlushAsync(ct);
+        }
+        catch (OperationCanceledException)
+        {
+            // Client disconnected — normal
+        }
+    }
+
     /// <summary>Chat nhanh (không cần tạo session trước)</summary>
     [HttpPost("quick")]
     public async Task<IActionResult> QuickChat([FromBody] SendMessageRequest req)

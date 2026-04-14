@@ -1,0 +1,37 @@
+# ==============================================================
+# MGSPlus — Agents Configuration
+# CrewAI multi-agent service ports, LLM, memory, MCP.
+# Secrets (OPENAI_API_KEY, etc.) live in root .env.
+# ==============================================================
+
+# ── Agent service ports & Docker hostnames ─────────────────────
+services:
+  supervisor:
+    host: agents-supervisor
+    port: 8010
+  documents:
+    host: agents-documents
+    port: 8011
+  workflow:
+    host: agents-workflow
+    port: 8012
+
+# ── LLM ───────────────────────────────────────────────────────
+llm:
+  provider: ollama          # openai | ollama  — override with LLM_PROVIDER env var
+  model: gpt-4o-mini        # used when provider=openai — override with LLM_MODEL
+  ollama:
+    model: qwen2.5:7b       # Ollama model tag — override with OLLAMA_MODEL
+    base_url: http://localhost:11434   # override with OLLAMA_BASE_URL
+    embedding_model: nomic-embed-text  # for vector search — override with OLLAMA_EMBEDDING_MODEL
+
+# ── Conversation memory ────────────────────────────────────────
+memory:
+  short_term_ttl_seconds: 3600      # override with SHORT_TERM_TTL_SECONDS
+  long_term_summary_threshold: 20   # override with LONG_TERM_SUMMARY_THRESHOLD
+
+# ── MCP server base URLs (empty = disabled) ───────────────────
+mcp:
+  zalo_url: ""              # override with MCP_ZALO_URL
+  messenger_url: ""         # override with MCP_MESSENGER_URL
+  wiki_url: ""              # override with MCP_WIKI_URL

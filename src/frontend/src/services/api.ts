@@ -73,7 +73,48 @@ export const chatApi = {
   getSession: (id: number) => api.get(`/chatbot/sessions/${id}`),
   sendMessage: (sessionId: number, data: { content: string; contextType?: string }) =>
     api.post(`/chatbot/sessions/${sessionId}/messages`, data),
-  quickChat: (content: string) => api.post('/chatbot/quick', { content })
+  quickChat: (content: string) => api.post('/chatbot/quick', { content }),
+
+  /** Open an SSE stream for a session message. Calls `onEvent` for each parsed event. */
+  streamMessage(
+    sessionId: number,
+    content: string,
+    onEvent: (event: StreamEvent) => void,
+    signal?: AbortSignal
+  ): Promise<void> {
+    const token = localStorage.getItem('token')
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || '/api'
+    return fetch(`${baseUrl}/chatbot/sessions/${sessionId}/messages/stream`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {})
+      },
+      body: JSON.stringify({ content }),
+      signal
+    }).then(async response => {
+      if (!response.ok) throw new Error(`HTTP ${response.status}`)
+      const reader = response.body!.getReader()
+      const decoder = new TextDecoder()
+      let buffer = ''
+      try {
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+          buffer += decoder.decode(value, { stream: true })
+          const lines = buffer.split('\n')
+          buffer = lines.pop() ?? ''
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              try { onEvent(JSON.parse(line.slice(6))) } catch { /* skip malformed */ }
+            }
+          }
+        }
+      } finally {
+        reader.releaseLock()
+      }
+    })
+  }
 }
 
 // ── Medical Records ───────────────────────────────────────────
@@ -83,6 +124,17 @@ export const medicalApi = {
 }
 
 // ── Types ────────────────────────────────────────────────────
+export interface StreamEvent {
+  type: 'start' | 'session' | 'reasoning' | 'tool_call' | 'response_chunk' | 'answer' | 'complete' | 'error'
+  content?: string
+  agent?: string
+  tool?: string
+  messageId?: number
+  userMessageId?: number
+  sessionId?: number
+  thread_id?: string
+}
+
 export interface RegisterRequest { email: string; password: string; firstName: string; lastName: string; phoneNumber?: string }
 export interface LoginRequest { email: string; password: string }
 export interface AuthResponse { token: string; tokenType: string; expiresIn: number; user: UserDto }

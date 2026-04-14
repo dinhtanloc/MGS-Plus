@@ -1,3 +1,6 @@
+using System.Runtime.CompilerServices;
+using System.Text;
+using System.Text.Json;
 using MGSPlus.Api.Data;
 using MGSPlus.Api.DTOs;
 using MGSPlus.Api.Models;
@@ -71,9 +74,151 @@ public class ChatbotService
         );
     }
 
+    // ── Streaming ────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Stream SSE events from the agent service back to the caller.
+    /// Saves user message immediately; saves assistant message after the stream completes.
+    /// </summary>
+    public async IAsyncEnumerable<string> StreamMessageAsync(
+        int sessionId,
+        int? userId,
+        SendMessageRequest req,
+        [EnumeratorCancellation] CancellationToken ct = default)
+    {
+        var session = await _db.ChatSessions
+            .FirstOrDefaultAsync(s => s.Id == sessionId, ct)
+            ?? throw new KeyNotFoundException("Session not found");
+
+        // Persist user message upfront so the client can correlate IDs
+        var userMsg = new ChatMessage
+        {
+            SessionId = sessionId,
+            Role = "user",
+            Content = req.Content,
+            CreatedAt = DateTime.UtcNow
+        };
+        _db.ChatMessages.Add(userMsg);
+        await _db.SaveChangesAsync(ct);
+
+        yield return JsonSerializer.Serialize(new { type = "session", userMessageId = userMsg.Id, sessionId });
+
+        var responseBuilder = new StringBuilder();
+        var agentUrl = _config["AgentService:SupervisorUrl"];
+
+        if (!string.IsNullOrEmpty(agentUrl))
+        {
+            // ── Try to connect to agent stream ────────────────────────────
+            HttpResponseMessage? agentResp = null;
+            bool connectOk = false;
+
+            try
+            {
+                using var http = new HttpClient { Timeout = TimeSpan.FromMinutes(3) };
+                var payload = new
+                {
+                    question = req.Content,
+                    thread_id = sessionId.ToString(),
+                    user_id = userId?.ToString() ?? "anonymous"
+                };
+                var httpReq = new HttpRequestMessage(HttpMethod.Post, $"{agentUrl}/chat/stream")
+                {
+                    Content = JsonContent.Create(payload)
+                };
+                agentResp = await http.SendAsync(httpReq, HttpCompletionOption.ResponseHeadersRead, ct);
+                connectOk = agentResp.IsSuccessStatusCode;
+                if (!connectOk) { agentResp.Dispose(); agentResp = null; }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Agent stream unavailable, using fallback");
+            }
+
+            if (connectOk && agentResp != null)
+            {
+                // ── Forward agent SSE to client line by line ──────────────
+                Stream? bodyStream = null;
+                StreamReader? reader = null;
+                bool streamOpenOk = false;
+
+                try
+                {
+                    bodyStream = await agentResp.Content.ReadAsStreamAsync(ct);
+                    reader = new StreamReader(bodyStream);
+                    streamOpenOk = true;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Failed to open agent response stream");
+                }
+
+                if (streamOpenOk && reader != null)
+                {
+                    while (!reader.EndOfStream && !ct.IsCancellationRequested)
+                    {
+                        string? line = null;
+                        bool readOk = true;
+                        try { line = await reader.ReadLineAsync(ct); }
+                        catch { readOk = false; }
+
+                        if (!readOk) break;
+                        if (string.IsNullOrEmpty(line) || !line.StartsWith("data: ")) continue;
+
+                        var eventJson = line[6..]; // strip "data: " prefix
+
+                        // Buffer answer content to persist after stream ends
+                        try
+                        {
+                            using var doc = JsonDocument.Parse(eventJson);
+                            if (doc.RootElement.TryGetProperty("type", out var tp))
+                            {
+                                var t = tp.GetString();
+                                if ((t == "answer" || t == "response_chunk")
+                                    && doc.RootElement.TryGetProperty("content", out var cp))
+                                    responseBuilder.Append(cp.GetString());
+                            }
+                        }
+                        catch { /* malformed event — skip */ }
+
+                        yield return eventJson;
+                    }
+
+                    reader.Dispose();
+                    await bodyStream!.DisposeAsync();
+                }
+
+                agentResp.Dispose();
+            }
+        }
+
+        // ── Fallback when agent produced nothing ──────────────────────────
+        if (responseBuilder.Length == 0)
+        {
+            var fallback = FallbackResponse(req.Content);
+            responseBuilder.Append(fallback);
+            yield return JsonSerializer.Serialize(new { type = "response_chunk", content = fallback });
+        }
+
+        // ── Persist assistant message ─────────────────────────────────────
+        var assistantMsg = new ChatMessage
+        {
+            SessionId = sessionId,
+            Role = "assistant",
+            Content = responseBuilder.ToString(),
+            Model = "mgsplus-agent",
+            CreatedAt = DateTime.UtcNow
+        };
+        _db.ChatMessages.Add(assistantMsg);
+        session.UpdatedAt = DateTime.UtcNow;
+        await _db.SaveChangesAsync(ct);
+
+        yield return JsonSerializer.Serialize(new { type = "complete", messageId = assistantMsg.Id });
+    }
+
+    // ── Non-streaming ────────────────────────────────────────────────────────
+
     private async Task<string> GenerateResponseAsync(string userMessage, string? contextType, IEnumerable<ChatMessage> history)
     {
-        // Forward to agent service if configured
         var agentUrl = _config["AgentService:SupervisorUrl"];
         if (!string.IsNullOrEmpty(agentUrl))
         {
@@ -82,15 +227,15 @@ public class ChatbotService
                 using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(30) };
                 var payload = new
                 {
-                    message = userMessage,
-                    context_type = contextType,
-                    history = history.Select(m => new { role = m.Role, content = m.Content })
+                    question = userMessage,
+                    thread_id = "default",
+                    user_id = "anonymous"
                 };
                 var resp = await http.PostAsJsonAsync($"{agentUrl}/chat", payload);
                 if (resp.IsSuccessStatusCode)
                 {
-                    var result = await resp.Content.ReadFromJsonAsync<AgentResponse>();
-                    return result?.Response ?? FallbackResponse(userMessage);
+                    var result = await resp.Content.ReadFromJsonAsync<AgentChatResponse>();
+                    return result?.Answer ?? FallbackResponse(userMessage);
                 }
             }
             catch (Exception ex)
@@ -114,5 +259,5 @@ public class ChatbotService
         return "Cảm ơn bạn đã liên hệ. Tôi đang xử lý câu hỏi của bạn. Hiện tại hệ thống AI đang trong quá trình khởi động — vui lòng thử lại sau ít phút hoặc liên hệ đường dây hỗ trợ 1800-xxxx.";
     }
 
-    private record AgentResponse(string Response);
+    private record AgentChatResponse(string Answer, string ThreadId, string Agent);
 }

@@ -21,12 +21,19 @@ class MemoryService:
 
     # ── Short-term (per-thread) ───────────────────────────────────────────────
 
-    def load_context(self, thread_id: str) -> List[dict]:
-        """Return all messages for *thread_id* ordered chronologically."""
+    def load_context(self, thread_id: str, user_id: str) -> List[dict]:
+        """Return messages for *thread_id* scoped strictly to *user_id*.
+
+        Filtering on both columns prevents one user from reading another
+        user's thread even if they know the thread_id.
+        """
         with self._session() as db:
             rows = (
                 db.query(ShortTermMemory)
-                .filter(ShortTermMemory.thread_id == thread_id)
+                .filter(
+                    ShortTermMemory.thread_id == thread_id,
+                    ShortTermMemory.user_id == user_id,
+                )
                 .order_by(ShortTermMemory.created_at)
                 .all()
             )
@@ -45,11 +52,12 @@ class MemoryService:
             )
             db.commit()
 
-    def clear_thread(self, thread_id: str) -> None:
-        """Delete all messages for a thread (e.g. after summarisation)."""
+    def clear_thread(self, thread_id: str, user_id: str) -> None:
+        """Delete messages for a thread, scoped to *user_id* (safe delete)."""
         with self._session() as db:
             db.query(ShortTermMemory).filter(
-                ShortTermMemory.thread_id == thread_id
+                ShortTermMemory.thread_id == thread_id,
+                ShortTermMemory.user_id == user_id,
             ).delete()
             db.commit()
 
@@ -105,7 +113,7 @@ class MemoryService:
                 )
             db.commit()
 
-    def should_summarise(self, thread_id: str) -> bool:
-        """True when the thread exceeds the summarisation threshold."""
-        messages = self.load_context(thread_id)
+    def should_summarise(self, thread_id: str, user_id: str) -> bool:
+        """True when the user's thread exceeds the summarisation threshold."""
+        messages = self.load_context(thread_id, user_id)
         return len(messages) >= self._settings.long_term_summary_threshold

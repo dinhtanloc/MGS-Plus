@@ -1,0 +1,23 @@
+# ==============================================================
+# MGSPlus — Backend Configuration (ASP.NET Core)
+# Service ports, JWT defaults, CORS origins.
+# Secrets (JWT_SECRET, SA_PASSWORD) live in root .env.
+# ==============================================================
+
+# ── Service ────────────────────────────────────────────────────
+service:
+  host: backend
+  port: 5000              # override with BACKEND_PORT
+
+# ── JWT defaults (non-secret) ──────────────────────────────────
+jwt:
+  issuer: MGSPlus         # override with JWT_ISSUER
+  audience: MGSPlusApp    # override with JWT_AUDIENCE
+  expires_minutes: 60     # override with JWT_EXPIRES_MINUTES
+
+# ── CORS ──────────────────────────────────────────────────────
+cors:
+  allowed_origins:
+    - http://localhost:3000   # Vite dev default
+    - http://localhost:5173   # Vite alt port
+    - http://localhost:4173   # Vite preview

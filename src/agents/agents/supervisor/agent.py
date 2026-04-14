@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from typing import Optional
 
-from crewai import Agent, LLM
+from crewai import Agent
 
-from src.agents.core.config import Settings, get_settings
+from src.agents.core.config import Settings, build_llm, get_settings
 from src.agents.agents.supervisor.tools import RouteToDocumentsTool, RouteToWorkflowTool
 
 
@@ -23,7 +23,7 @@ def build_supervisor_agent(settings: Optional[Settings] = None) -> Agent:
     """
     cfg = settings or get_settings()
 
-    llm = LLM(model=cfg.llm_model, api_key=cfg.openai_api_key)
+    llm = build_llm(cfg)
 
     return Agent(
         role="Supervisor & Intent Router",

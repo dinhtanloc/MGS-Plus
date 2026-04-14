@@ -1,34 +1,25 @@
-# Custom Qdrant image with Prometheus monitoring support
+# Qdrant vector database — MGSPlus
+# Secrets (QDRANT_API_KEY) are injected at RUNTIME via docker-compose env_file.
+# No secrets baked into the image.
 FROM qdrant/qdrant:latest
 
-# Build arguments for sensitive data (pass via --build-arg)
-ARG QDRANT_API_KEY=""
-ARG QDRANT_READ_ONLY_API_KEY=""
-
-# Install additional monitoring and debugging tools
-RUN apt-get update && apt-get install -y \
+# Install monitoring and debug tools
+RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     wget \
-    git \
-    prometheus-node-exporter \
     && rm -rf /var/lib/apt/lists/*
 
-# Create directories for configuration and data
-RUN mkdir -p /qdrant/storage/config
+# Copy static config (no secrets here — API key is set at runtime)
+COPY config.yml /qdrant/config/config.yaml
 
-# Copy Qdrant configuration
-COPY config.yml /qdrant/storage/config/config.yml
+# Qdrant reads API key from env var at runtime:
+#   QDRANT__SERVICE__API_KEY          — main API key
+#   QDRANT__SERVICE__READ_ONLY_API_KEY — read-only key
+# Both are injected by docker-compose via env_file: ../../.env
 
-# Export build args as environment variables (available at runtime)
-ENV QDRANT_API_KEY=${QDRANT_API_KEY}
-ENV QDRANT_READ_ONLY_API_KEY=${QDRANT_READ_ONLY_API_KEY}
+EXPOSE 6333 6334
 
-# Expose Qdrant API port and Prometheus metrics port
-EXPOSE 6333 9090
+HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
+    CMD curl -sf http://localhost:6333/readyz || exit 1
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:6333/health || exit 1
-
-# Run Qdrant server
-CMD ["./qdrant"]
+CMD ["./qdrant", "--config-path", "/qdrant/config/config.yaml"]

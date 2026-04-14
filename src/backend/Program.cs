@@ -7,11 +7,21 @@ using Microsoft.OpenApi.Models;
 using MGSPlus.Api.Data;
 using MGSPlus.Api.Services;
 
-// Load .env from project root (3 levels up from bin directory at runtime)
-var envPath = Path.Combine(Directory.GetCurrentDirectory(), ".env");
-if (!File.Exists(envPath))
-    envPath = Path.Combine(Directory.GetCurrentDirectory(), "..", "..", "..", "..", "..", ".env");
-if (File.Exists(envPath))
+// Load root .env — traverse up from current directory until .env is found.
+// Works for: dotnet run (cwd = src/backend/), docker (cwd = /app), bin/Debug/
+static string? FindRootEnv(string startDir)
+{
+    var dir = new DirectoryInfo(startDir);
+    while (dir != null)
+    {
+        var candidate = Path.Combine(dir.FullName, ".env");
+        if (File.Exists(candidate)) return candidate;
+        dir = dir.Parent;
+    }
+    return null;
+}
+var envPath = FindRootEnv(Directory.GetCurrentDirectory());
+if (envPath != null)
     Env.Load(envPath);
 
 var builder = WebApplication.CreateBuilder(args);
@@ -121,12 +131,20 @@ builder.Services.AddCors(opt =>
 // ── Build & Configure ─────────────────────────────────────────────────────────
 var app = builder.Build();
 
-// Auto-migrate on startup (dev only)
+// Auto-migrate on startup (dev only) — non-fatal if DB is unavailable
 if (app.Environment.IsDevelopment())
 {
-    using var scope = app.Services.CreateScope();
-    var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    db.Database.Migrate();
+    try
+    {
+        using var scope = app.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        db.Database.Migrate();
+    }
+    catch (Exception ex)
+    {
+        var logger = app.Services.GetRequiredService<ILogger<Program>>();
+        logger.LogWarning("DB migration skipped — database not reachable: {Message}", ex.Message);
+    }
 }
 
 app.UseSwagger();

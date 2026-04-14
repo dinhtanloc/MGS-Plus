@@ -102,7 +102,17 @@ class QdrantService:
         await self._client.close()
 
 
-@lru_cache(maxsize=1)
+_qdrant_service: Optional[QdrantService] = None
+
+
 def get_qdrant_service(settings: Optional[Settings] = None) -> QdrantService:
-    from src.agents.core.config import get_settings
-    return QdrantService(settings or get_settings())
+    """Return a module-level singleton QdrantService.
+
+    ``@lru_cache`` cannot be used here because ``Settings`` is not hashable.
+    A module-level singleton is equivalent since ``Settings`` itself is a singleton.
+    """
+    global _qdrant_service
+    if _qdrant_service is None:
+        from src.agents.core.config import get_settings
+        _qdrant_service = QdrantService(settings or get_settings())
+    return _qdrant_service

@@ -1,12 +1,19 @@
 import { defineConfig, loadEnv } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import { fileURLToPath, URL } from 'node:url'
+import path from 'node:path'
+
+// Project root = two levels up from src/frontend/
+const projectRoot = path.resolve(fileURLToPath(new URL('.', import.meta.url)), '../..')
 
 export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, process.cwd(), '')
+  // Load ALL env vars from project root .env (single source of truth)
+  const env = loadEnv(mode, projectRoot, '')
   const backendUrl = env.VITE_BACKEND_URL || 'http://localhost:5000'
 
   return {
+    // envDir points to project root so VITE_* vars are read from root .env
+    envDir: projectRoot,
     plugins: [vue()],
     resolve: {
       alias: {
@@ -15,7 +22,6 @@ export default defineConfig(({ mode }) => {
     },
     server: {
       port: parseInt(env.FRONTEND_PORT || '3000'),
-      // Dev proxy: /api/* → backend (avoids CORS in development)
       proxy: {
         '/api': {
           target: backendUrl,

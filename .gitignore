@@ -4,10 +4,16 @@ __pycache__/
 build/
 dist/
 wheels/
+node_modules/
+net8.0/
+net9.0/
 *.egg-info
 
 # Virtual environments
 .venv
 appsettings.json
 
+# Env files — single root .env is the only secret file
 .env
+.env.local
+infra/.env.local

@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("MGSPlus.Api")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+af060b4dc436230d517b43cefaaa7862dec77895")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+e32af29512b2bf0391ae07c4cbe9bd6eea91cb9c")]
 [assembly: System.Reflection.AssemblyProductAttribute("MGSPlus.Api")]
 [assembly: System.Reflection.AssemblyTitleAttribute("MGSPlus.Api")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

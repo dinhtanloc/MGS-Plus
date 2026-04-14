@@ -1,6 +1,10 @@
 from __future__ import annotations
 
+import asyncio
+import json
+
 from fastapi import Depends, FastAPI, HTTPException
+from fastapi.responses import StreamingResponse
 
 from src.agents.core.a2a.schemas import (
     A2ARequest,
@@ -77,6 +81,47 @@ async def chat(
         return ChatResponse(answer=answer, thread_id=body.thread_id)
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc))
+
+
+# ── Streaming chat endpoint ───────────────────────────────────────────────────
+
+@app.post("/chat/stream", tags=["Chat"])
+async def chat_stream(
+    body: ChatRequest,
+    crew: MainCrew = Depends(get_main_crew),
+) -> StreamingResponse:
+    """Server-Sent Events stream exposing each agent reasoning step + final answer.
+
+    Event format (one per line):  ``data: <json>\\n\\n``
+
+    Event types:
+    - ``start``        — stream opened
+    - ``reasoning``    — agent thought
+    - ``tool_call``    — tool being invoked
+    - ``answer``       — full final answer
+    - ``error``        — unrecoverable error
+    """
+    loop = asyncio.get_running_loop()
+    event_q = crew.kickoff_stream(body.question, body.thread_id, body.user_id)
+
+    async def _generate():
+        yield f"data: {json.dumps({'type': 'start', 'thread_id': body.thread_id})}\n\n"
+        while True:
+            # Offload blocking queue.get() to a thread-pool worker
+            item = await loop.run_in_executor(None, event_q.get)
+            if item is None:  # sentinel — crew finished
+                break
+            yield f"data: {item}\n\n"
+
+    return StreamingResponse(
+        _generate(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+            "Connection": "keep-alive",
+        },
+    )
 
 
 # ── Health ────────────────────────────────────────────────────────────────────

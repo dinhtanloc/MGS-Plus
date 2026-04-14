@@ -1,70 +1,69 @@
 #!/bin/bash
+# Build all Docker images for MGSPlus.
+# Env vars are sourced from the single project root .env (no per-service .env).
+#
+# Usage:
+#   ./infra/scripts/build.sh           # build all
+#   ./infra/scripts/build.sh qdrant    # build one service
+#
+# Run from project root OR infra/scripts/ — both work.
 
-# Build Docker images with environment configuration
-# Reads environment variables from {INFRA_HOME}/.env.local
+set -euo pipefail
 
-set -e
-
-# Script directory and paths
+# ── Resolve project root ───────────────────────────────────────────────────────
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-INFRA_HOME="$(dirname "$SCRIPT_DIR")"
-ENV_DIR="${INFRA_HOME}"
-DOCKER_SERVICES_DIR="${INFRA_HOME}/docker/services"
+INFRA_DIR="$(dirname "$SCRIPT_DIR")"
+PROJECT_ROOT="$(dirname "$INFRA_DIR")"
 
-# Load environment variables
-ENV_LOCAL="${ENV_DIR}/.env.local"
-ENV_EXAMPLE="${ENV_DIR}/.env.example"
+# ── Load root .env (single source of truth) ────────────────────────────────────
+ROOT_ENV="${PROJECT_ROOT}/.env"
+ROOT_ENV_EXAMPLE="${PROJECT_ROOT}/.env.example"
 
-if [ -f "$ENV_LOCAL" ]; then
-    echo "[INFO] Loading environment from: $ENV_LOCAL"
-    source "$ENV_LOCAL"
-elif [ -f "$ENV_EXAMPLE" ]; then
-    echo "[INFO] Loading environment from: $ENV_EXAMPLE"
-    source "$ENV_EXAMPLE"
+if [ -f "$ROOT_ENV" ]; then
+    echo "[INFO] Loading env: $ROOT_ENV"
+    # shellcheck disable=SC1090
+    set -a; source "$ROOT_ENV"; set +a
+elif [ -f "$ROOT_ENV_EXAMPLE" ]; then
+    echo "[WARN] .env not found — loading example: $ROOT_ENV_EXAMPLE"
+    # shellcheck disable=SC1090
+    set -a; source "$ROOT_ENV_EXAMPLE"; set +a
 else
-    echo "[ERROR] No environment file found in: $ENV_DIR"
-    echo "[ERROR] Expected: $ENV_LOCAL or $ENV_EXAMPLE"
+    echo "[ERROR] No .env found at project root: $PROJECT_ROOT"
+    echo "        Copy .env.example to .env and fill in values."
     exit 1
 fi
 
-echo "[INFO] Building Docker images with build arguments..."
-echo ""
+PROJECT_NAME="${COMPOSE_PROJECT_NAME:-mgsplus}"
+COMPOSE_FILE="${INFRA_DIR}/docker-compose.yml"
 
-# Build Qdrant image
-echo "[INFO] Building Qdrant image: ${COMPOSE_PROJECT_NAME}-qdrant:latest"
-docker build \
-    --build-arg QDRANT_API_KEY="${QDRANT_API_KEY}" \
-    --build-arg QDRANT_READ_ONLY_API_KEY="${QDRANT_READ_ONLY_API_KEY}" \
-    -t "${COMPOSE_PROJECT_NAME}-qdrant:latest" \
-    "${DOCKER_SERVICES_DIR}/qdrant"
+# ── Helper ─────────────────────────────────────────────────────────────────────
+build_service() {
+    local svc="$1"
+    echo ""
+    echo "[INFO] ─── Building: $svc ───────────────────────────────"
+    docker compose -f "$COMPOSE_FILE" --project-directory "$PROJECT_ROOT" \
+        build "$svc"
+    echo "[OK]  $svc built successfully"
+}
 
-if [ $? -eq 0 ]; then
-    echo "[SUCCESS] Qdrant image built successfully"
+# ── Main ───────────────────────────────────────────────────────────────────────
+SERVICES=(sqlserver qdrant neo4j backend agents-supervisor agents-documents agents-workflow frontend)
+
+if [ $# -gt 0 ]; then
+    # Build specific services passed as arguments
+    for svc in "$@"; do
+        build_service "$svc"
+    done
 else
-    echo "[ERROR] Qdrant build failed"
-    exit 1
+    # Build all
+    echo "[INFO] Building all services for project: $PROJECT_NAME"
+    for svc in "${SERVICES[@]}"; do
+        build_service "$svc"
+    done
 fi
 
 echo ""
-
-# Build SQL Server image
-echo "[INFO] Building SQL Server image: ${COMPOSE_PROJECT_NAME}-sqlserver:latest"
-docker build \
-    --build-arg SA_PASSWORD="${SA_PASSWORD}" \
-    --build-arg SQL_ADMIN_USER="${SQL_ADMIN_USER}" \
-    --build-arg ACCEPT_EULA="${ACCEPT_EULA}" \
-    -t "${COMPOSE_PROJECT_NAME}-sqlserver:latest" \
-    "${DOCKER_SERVICES_DIR}/sqlserver"
-
-if [ $? -eq 0 ]; then
-    echo "[SUCCESS] SQL Server image built successfully"
-else
-    echo "[ERROR] SQL Server build failed"
-    exit 1
-fi
-
+echo "[OK] Build complete."
 echo ""
-echo "[SUCCESS] All Docker images built successfully"
-echo ""
-echo "[INFO] Image summary:"
-docker images | grep "$COMPOSE_PROJECT_NAME" || echo "[WARNING] No images found matching $COMPOSE_PROJECT_NAME"
+echo "[INFO] Images:"
+docker images | grep "^${PROJECT_NAME}" || echo "  (none found matching '${PROJECT_NAME}')"

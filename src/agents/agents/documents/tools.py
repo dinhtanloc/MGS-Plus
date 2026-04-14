@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import concurrent.futures
 from typing import Any, List, Optional, Type
 
 from crewai.tools import BaseTool
@@ -9,6 +10,16 @@ from pydantic import BaseModel, Field
 from src.agents.core.config import Settings, get_settings
 from src.agents.core.db.qdrant_client import QdrantService, get_qdrant_service
 from src.agents.core.mcp.mcp_client import MCPClient
+
+
+def _run_async(coro):
+    """Run an async coroutine safely even when an event loop is already running.
+
+    See supervisor/tools.py for rationale.
+    """
+    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+        future = pool.submit(asyncio.run, coro)
+        return future.result()
 
 
 # ── Qdrant search tool ────────────────────────────────────────────────────────
@@ -40,10 +51,7 @@ class QdrantSearchTool(BaseTool):
         self._qdrant = get_qdrant_service(self._settings)
 
     def _run(self, query_text: str, collection: str = "knowledge_shared", limit: int = 5) -> str:
-        # CrewAI tools are synchronous; run async search in event loop
-        results = asyncio.get_event_loop().run_until_complete(
-            self._search(query_text, collection, limit)
-        )
+        results = _run_async(self._search(query_text, collection, limit))
         if not results:
             return "No relevant documents found."
         return "\n\n".join(
@@ -103,9 +111,7 @@ class MCPSearchTool(BaseTool):
         if not url:
             return f"MCP source '{source}' is not configured. Set mcp_{source}_url in settings."
 
-        result = asyncio.get_event_loop().run_until_complete(
-            self._call_mcp(url, query)
-        )
+        result = _run_async(self._call_mcp(url, query))
         return result or f"No results from {source}."
 
     async def _call_mcp(self, url: str, query: str) -> str:
