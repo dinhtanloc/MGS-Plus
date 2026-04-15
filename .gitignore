@@ -8,7 +8,7 @@ node_modules/
 net8.0/
 net9.0/
 *.egg-info
-
+.claude/
 # Virtual environments
 .venv
 appsettings.json
