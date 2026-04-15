@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from fastapi import Depends, FastAPI
+from prometheus_fastapi_instrumentator import Instrumentator
 
 from src.agents.core.a2a.schemas import (
     A2ARequest,
@@ -10,6 +11,7 @@ from src.agents.core.a2a.schemas import (
     TaskOutput,
 )
 from src.agents.core.config import Settings, get_settings
+from src.agents.api.deps import verify_api_key
 from src.agents.agents.documents.agent import build_documents_agent
 from src.agents.crews.tasks.document_tasks import retrieve_knowledge_task
 
@@ -20,6 +22,8 @@ app = FastAPI(
     description="Retrieves information from Qdrant and external MCP sources.",
     version="0.1.0",
 )
+
+Instrumentator().instrument(app).expose(app)
 
 
 def _run_documents_task(question: str, user_id: str) -> str:
@@ -45,7 +49,8 @@ async def agent_card(settings: Settings = Depends(get_settings)) -> AgentCard:
     )
 
 
-@app.post("/a2a", response_model=A2AResponse, tags=["A2A"])
+@app.post("/a2a", response_model=A2AResponse, tags=["A2A"],
+          dependencies=[Depends(verify_api_key)])
 async def a2a_endpoint(request: A2ARequest) -> A2AResponse:
     if request.method != "tasks/send":
         return A2AResponse.err(request.id, -32601, f"Method '{request.method}' not found")

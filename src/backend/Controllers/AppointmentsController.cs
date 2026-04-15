@@ -22,7 +22,7 @@ public class AppointmentsController : ControllerBase
         _jwt = jwt;
     }
 
-    /// <summary>Lấy danh sách lịch hẹn của người dùng</summary>
+    /// <summary>Get the current user's appointments</summary>
     [HttpGet]
     public async Task<IActionResult> GetMyAppointments([FromQuery] string? status, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
@@ -44,7 +44,7 @@ public class AppointmentsController : ControllerBase
         return Ok(new { total, page, pageSize, data = items.Select(ToDto) });
     }
 
-    /// <summary>Đặt lịch hẹn mới</summary>
+    /// <summary>Book a new appointment</summary>
     [HttpPost]
     [ProducesResponseType(typeof(AppointmentDto), 201)]
     public async Task<IActionResult> Create([FromBody] CreateAppointmentRequest req)
@@ -78,7 +78,7 @@ public class AppointmentsController : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = appointment.Id }, ToDto(created));
     }
 
-    /// <summary>Lấy chi tiết lịch hẹn</summary>
+    /// <summary>Get appointment detail</summary>
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById(int id)
     {
@@ -92,7 +92,7 @@ public class AppointmentsController : ControllerBase
         return Ok(ToDto(a));
     }
 
-    /// <summary>Cập nhật / hủy lịch hẹn</summary>
+    /// <summary>Update or cancel an appointment</summary>
     [HttpPatch("{id}")]
     public async Task<IActionResult> Update(int id, [FromBody] UpdateAppointmentRequest req)
     {
@@ -110,7 +110,7 @@ public class AppointmentsController : ControllerBase
         return NoContent();
     }
 
-    /// <summary>Lấy danh sách bác sĩ</summary>
+    /// <summary>Get list of available doctors</summary>
     [HttpGet("doctors")]
     [AllowAnonymous]
     public async Task<IActionResult> GetDoctors([FromQuery] string? specialty)
@@ -130,6 +130,56 @@ public class AppointmentsController : ControllerBase
         }).ToListAsync();
 
         return Ok(doctors);
+    }
+
+    /// <summary>Get a doctor's work schedule</summary>
+    [HttpGet("doctors/{id}/schedule")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetDoctorSchedule(int id)
+    {
+        var exists = await _db.Doctors.AnyAsync(d => d.Id == id);
+        if (!exists) return NotFound();
+
+        var schedule = await _db.DoctorSchedules
+            .Where(s => s.DoctorId == id && s.IsAvailable)
+            .Select(s => new { s.DayOfWeek, StartTime = s.StartTime.ToString("HH:mm"), EndTime = s.EndTime.ToString("HH:mm") })
+            .OrderBy(s => s.DayOfWeek)
+            .ToListAsync();
+
+        return Ok(schedule);
+    }
+
+    /// <summary>Get available time slots for a doctor on a given day</summary>
+    [HttpGet("doctors/{id}/slots")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetDoctorSlots(int id, [FromQuery] DateTime date)
+    {
+        var schedules = await _db.DoctorSchedules
+            .Where(s => s.DoctorId == id && s.IsAvailable && s.DayOfWeek == (int)date.DayOfWeek)
+            .ToListAsync();
+
+        if (!schedules.Any()) return Ok(new { date, slots = Array.Empty<string>() });
+
+        // Generate 30-minute slots within work hours
+        var booked = await _db.Appointments
+            .Where(a => a.DoctorId == id && a.ScheduledAt.Date == date.Date && a.Status != "Cancelled")
+            .Select(a => a.ScheduledAt.TimeOfDay)
+            .ToListAsync();
+
+        var slots = new List<string>();
+        foreach (var schedule in schedules)
+        {
+            var current = schedule.StartTime.ToTimeSpan();
+            var end     = schedule.EndTime.ToTimeSpan();
+            while (current.Add(TimeSpan.FromMinutes(30)) <= end)
+            {
+                if (!booked.Any(b => b == current))
+                    slots.Add(TimeOnly.FromTimeSpan(current).ToString("HH:mm"));
+                current = current.Add(TimeSpan.FromMinutes(30));
+            }
+        }
+
+        return Ok(new { date = date.ToString("yyyy-MM-dd"), slots });
     }
 
     private static AppointmentDto ToDto(Models.Appointment a) => new(

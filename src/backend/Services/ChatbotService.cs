@@ -52,8 +52,8 @@ public class ChatbotService
         };
         _db.ChatMessages.Add(userMsg);
 
-        // Build AI response (stub — connects to agent service in production)
-        var assistantContent = await GenerateResponseAsync(req.Content, req.ContextType, session.Messages);
+        // Build AI response — connects to agent service
+        var assistantContent = await GenerateResponseAsync(req.Content, sessionId, userId);
 
         var assistantMsg = new ChatMessage
         {
@@ -115,6 +115,7 @@ public class ChatbotService
             try
             {
                 using var http = new HttpClient { Timeout = TimeSpan.FromMinutes(3) };
+                var agentApiKey = _config["AgentService:ApiKey"] ?? "";
                 var payload = new
                 {
                     question = req.Content,
@@ -125,6 +126,8 @@ public class ChatbotService
                 {
                     Content = JsonContent.Create(payload)
                 };
+                if (!string.IsNullOrEmpty(agentApiKey))
+                    httpReq.Headers.Add("X-Api-Key", agentApiKey);
                 agentResp = await http.SendAsync(httpReq, HttpCompletionOption.ResponseHeadersRead, ct);
                 connectOk = agentResp.IsSuccessStatusCode;
                 if (!connectOk) { agentResp.Dispose(); agentResp = null; }
@@ -217,7 +220,7 @@ public class ChatbotService
 
     // ── Non-streaming ────────────────────────────────────────────────────────
 
-    private async Task<string> GenerateResponseAsync(string userMessage, string? contextType, IEnumerable<ChatMessage> history)
+    private async Task<string> GenerateResponseAsync(string userMessage, int sessionId, int? userId)
     {
         var agentUrl = _config["AgentService:SupervisorUrl"];
         if (!string.IsNullOrEmpty(agentUrl))
@@ -225,13 +228,20 @@ public class ChatbotService
             try
             {
                 using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(30) };
+                var agentApiKey = _config["AgentService:ApiKey"] ?? "";
                 var payload = new
                 {
                     question = userMessage,
-                    thread_id = "default",
-                    user_id = "anonymous"
+                    thread_id = sessionId.ToString(),
+                    user_id = userId?.ToString() ?? "anonymous"
                 };
-                var resp = await http.PostAsJsonAsync($"{agentUrl}/chat", payload);
+                using var req2 = new HttpRequestMessage(HttpMethod.Post, $"{agentUrl}/chat")
+                {
+                    Content = JsonContent.Create(payload)
+                };
+                if (!string.IsNullOrEmpty(agentApiKey))
+                    req2.Headers.Add("X-Api-Key", agentApiKey);
+                var resp = await http.SendAsync(req2);
                 if (resp.IsSuccessStatusCode)
                 {
                     var result = await resp.Content.ReadFromJsonAsync<AgentChatResponse>();

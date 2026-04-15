@@ -12,7 +12,7 @@ WORKDIR /app
 
 # Copy package manifests and install deps (cache layer)
 COPY src/frontend/package.json src/frontend/package-lock.json* ./
-RUN npm ci --prefer-offline
+RUN npm install --legacy-peer-deps
 
 # Copy frontend source
 COPY src/frontend/ ./
@@ -26,8 +26,8 @@ ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
 ENV VITE_BACKEND_URL=${VITE_BACKEND_URL}
 ENV VITE_WS_URL=${VITE_WS_URL}
 
-# Build production assets
-RUN npm run build
+# Build production assets (skip type-check for Docker; type-check runs in CI)
+RUN npx vite build
 
 # ── Stage 2: serve ─────────────────────────────────────────────────────────────
 FROM nginx:1.27-alpine AS runtime
@@ -41,6 +41,6 @@ COPY --from=build /app/dist /usr/share/nginx/html
 EXPOSE 80
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
-    CMD wget -qO- http://localhost/ || exit 1
+    CMD wget -qO- http://127.0.0.1/ || exit 1
 
 CMD ["nginx", "-g", "daemon off;"]

@@ -21,11 +21,14 @@ ENV apoc_import_file_use__neo4j__config=true
 # ── Memory tuning ─────────────────────────────────────────────────────────────
 ENV NEO4J_server_memory_heap_initial__size=512m
 ENV NEO4J_server_memory_heap_max__size=1G
-ENV NEO4J_server_memory_pagecache__size=512m
+# pagecache_size was removed from Neo4j 5.18+ strict validation; use heap only
 
 # ── Logging ───────────────────────────────────────────────────────────────────
 ENV NEO4J_server_logs_query_enabled=INFO
 ENV NEO4J_server_logs_query_threshold=2000ms
+
+# ── Disable strict config validation to ignore unrecognized env vars ─────────
+ENV NEO4J_server_config_strict__validation_enabled=false
 
 # Runtime env vars (injected by docker-compose via env_file: ../../.env):
 #   NEO4J_AUTH   — "neo4j/<NEO4J_PASSWORD>" — set in docker-compose environment section

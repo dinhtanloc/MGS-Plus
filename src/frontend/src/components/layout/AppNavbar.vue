@@ -102,7 +102,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, type ComputedRef } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { onClickOutside } from '@vueuse/core'
@@ -115,13 +115,23 @@ const userMenuRef = ref<HTMLElement>()
 
 onClickOutside(userMenuRef, () => { userMenuOpen.value = false })
 
-const navItems = [
+const publicNavItems = [
   { path: '/', label: 'Trang chủ' },
   { path: '/news', label: 'Tin tức y tế' },
   { path: '/blog', label: 'Blog sức khỏe' },
   { path: '/services', label: 'Dịch vụ' },
   { path: '/appointment', label: 'Đăng ký khám' }
 ]
+
+const authNavItems = [
+  { path: '/chat', label: 'Tư vấn AI' }
+]
+
+const navItems = computed(() =>
+  auth.isLoggedIn
+    ? [...publicNavItems, ...authNavItems]
+    : publicNavItems
+)
 
 const userInitials = computed(() => {
   if (!auth.user) return '?'

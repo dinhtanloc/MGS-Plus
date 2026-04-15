@@ -53,6 +53,28 @@ class MainCrew:
             verbose=True,
         )
 
+    def _build_context(self, thread_id: str, user_id: str) -> str:
+        """Assemble task context from long-term summary + recent short-term history."""
+        parts: list[str] = []
+
+        # Long-term memory: inject past-session summary so the agent remembers
+        long_term = self._memory.get_long_term(user_id)
+        if long_term and long_term.get("summary"):
+            parts.append(
+                f"[Past session summary for this user]\n{long_term['summary']}"
+            )
+
+        # Short-term memory: last 10 messages in the current thread
+        history = self._memory.load_context(thread_id, user_id)
+        if history:
+            parts.append(
+                "\n".join(
+                    f"{m['role'].upper()}: {m['content']}" for m in history[-10:]
+                )
+            )
+
+        return "\n\n".join(parts)
+
     def kickoff(
         self,
         question: str,
@@ -60,11 +82,7 @@ class MainCrew:
         user_id: str = "anonymous",
     ) -> str:
         """Run the crew synchronously and persist the exchange in memory."""
-        # Load context from short-term memory scoped to this user
-        history = self._memory.load_context(thread_id, user_id)
-        context = "\n".join(
-            f"{m['role'].upper()}: {m['content']}" for m in history[-10:]
-        )
+        context = self._build_context(thread_id, user_id)
 
         crew = self._build_crew(question, context)
         result = crew.kickoff()
@@ -133,10 +151,7 @@ class MainCrew:
 
         def _run() -> None:
             try:
-                history = self._memory.load_context(thread_id, user_id)
-                context = "\n".join(
-                    f"{m['role'].upper()}: {m['content']}" for m in history[-10:]
-                )
+                context = self._build_context(thread_id, user_id)
                 task = route_and_respond_task(
                     supervisor=self._supervisor,
                     question=question,

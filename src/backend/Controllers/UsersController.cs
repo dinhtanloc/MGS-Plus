@@ -22,7 +22,7 @@ public class UsersController : ControllerBase
         _jwt = jwt;
     }
 
-    /// <summary>Lấy hồ sơ đầy đủ người dùng</summary>
+    /// <summary>Get the full user profile</summary>
     [HttpGet("profile")]
     public async Task<IActionResult> GetProfile()
     {
@@ -47,7 +47,7 @@ public class UsersController : ControllerBase
         });
     }
 
-    /// <summary>Cập nhật thông tin cá nhân và hồ sơ</summary>
+    /// <summary>Update personal information and profile</summary>
     [HttpPut("profile")]
     public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileRequest req)
     {
@@ -82,7 +82,7 @@ public class UsersController : ControllerBase
         return NoContent();
     }
 
-    /// <summary>Lấy danh sách người dùng (Admin only)</summary>
+    /// <summary>Get all users (Admin only)</summary>
     [HttpGet]
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> GetUsers([FromQuery] int page = 1, [FromQuery] int pageSize = 20)

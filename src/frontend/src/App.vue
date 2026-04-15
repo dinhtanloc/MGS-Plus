@@ -7,6 +7,8 @@
     <AppFooter />
     <!-- Chatbot widget always visible bottom-right -->
     <ChatbotWidget />
+    <!-- Global toast notifications -->
+    <ToastContainer />
   </div>
 </template>
 
@@ -14,4 +16,5 @@
 import AppNavbar from '@/components/layout/AppNavbar.vue'
 import AppFooter from '@/components/layout/AppFooter.vue'
 import ChatbotWidget from '@/components/chatbot/ChatbotWidget.vue'
+import ToastContainer from '@/components/common/ToastContainer.vue'
 </script>

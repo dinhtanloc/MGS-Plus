@@ -137,41 +137,74 @@ Neo4j holds graph-structured medical knowledge: relationships between diagnoses,
 
 ## Common Commands
 
-Start everything:
+> All commands are run from the **project root** (`MGSPlus/`).
+> Docker Compose automatically reads `.env` from the current directory — no `--env-file` flag needed.
+
+### Start
 
 ```bash
+# First run, or after changing source code (rebuilds images)
+docker compose -f infra/docker-compose.yml up --build -d
+
+# Subsequent runs (uses existing images)
 docker compose -f infra/docker-compose.yml up -d
-```
 
-Start only databases (for local development of backend/agents):
-
-```bash
+# Start only infrastructure databases (useful for local backend/agent development)
 docker compose -f infra/docker-compose.yml up -d sqlserver qdrant neo4j
 ```
 
-Rebuild and restart a single service:
+### Stop
 
 ```bash
+# Stop all services, keep data volumes intact
+docker compose -f infra/docker-compose.yml down
+
+# Stop all services and delete all data volumes (full reset)
+docker compose -f infra/docker-compose.yml down -v
+```
+
+### Stop / start individual services
+
+```bash
+# Stop one service
+docker compose -f infra/docker-compose.yml stop backend
+
+# Stop multiple services
+docker compose -f infra/docker-compose.yml stop backend frontend
+
+# Restart a service
+docker compose -f infra/docker-compose.yml restart backend
+
+# Rebuild and restart a single service
 docker compose -f infra/docker-compose.yml up -d --build agents-supervisor
 ```
 
-View streaming logs for a service:
+### Status & logs
 
 ```bash
+# Show running containers and their status
+docker compose -f infra/docker-compose.yml ps
+
+# List available service names
+docker compose -f infra/docker-compose.yml ps --services
+
+# Stream logs for a service
 docker compose -f infra/docker-compose.yml logs -f backend
 ```
 
-Stop all services and preserve volumes:
+### Service URLs
 
-```bash
-docker compose -f infra/docker-compose.yml down
-```
-
-Stop all services and delete all data:
-
-```bash
-docker compose -f infra/docker-compose.yml down -v
-```
+| Service | URL |
+|---------|-----|
+| Frontend | http://localhost:3000 |
+| Backend API / Swagger | http://localhost:5001/swagger |
+| Grafana | http://localhost:3001 |
+| Prometheus | http://localhost:9091 |
+| Qdrant Dashboard | http://localhost:6333/dashboard |
+| Neo4j Browser | http://localhost:7474 |
+| Supervisor Agent | http://localhost:8010 |
+| Documents Agent | http://localhost:8011 |
+| Workflow Agent | http://localhost:8012 |
 
 ---
 

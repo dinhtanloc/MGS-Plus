@@ -21,7 +21,7 @@ public class BlogController : ControllerBase
         _jwt = jwt;
     }
 
-    /// <summary>Danh sách bài viết (public)</summary>
+    /// <summary>Blog post list (public)</summary>
     [HttpGet]
     [AllowAnonymous]
     public async Task<IActionResult> GetPosts(
@@ -53,7 +53,7 @@ public class BlogController : ControllerBase
         return Ok(new { total, page, pageSize, data = items });
     }
 
-    /// <summary>Chi tiết bài viết theo slug</summary>
+    /// <summary>Blog post detail by slug</summary>
     [HttpGet("{slug}")]
     [AllowAnonymous]
     public async Task<IActionResult> GetBySlug(string slug)
@@ -76,7 +76,7 @@ public class BlogController : ControllerBase
         ));
     }
 
-    /// <summary>Danh mục blog</summary>
+    /// <summary>Blog categories</summary>
     [HttpGet("categories")]
     [AllowAnonymous]
     public async Task<IActionResult> GetCategories()
@@ -87,7 +87,7 @@ public class BlogController : ControllerBase
         return Ok(categories);
     }
 
-    /// <summary>Tạo bài viết mới</summary>
+    /// <summary>Create a new blog post</summary>
     [HttpPost]
     [Authorize(Roles = "Admin,Doctor")]
     public async Task<IActionResult> CreatePost([FromBody] CreateBlogPostRequest req)
@@ -118,7 +118,7 @@ public class BlogController : ControllerBase
         return CreatedAtAction(nameof(GetBySlug), new { slug = post.Slug }, new { post.Id, post.Slug });
     }
 
-    /// <summary>Cập nhật bài viết</summary>
+    /// <summary>Update a blog post</summary>
     [HttpPut("{id}")]
     [Authorize(Roles = "Admin,Doctor")]
     public async Task<IActionResult> UpdatePost(int id, [FromBody] UpdateBlogPostRequest req)
@@ -141,6 +141,25 @@ public class BlogController : ControllerBase
         }
         post.UpdatedAt = DateTime.UtcNow;
 
+        await _db.SaveChangesAsync();
+        return NoContent();
+    }
+
+    /// <summary>Delete a blog post</summary>
+    [HttpDelete("{id}")]
+    [Authorize(Roles = "Admin,Doctor")]
+    public async Task<IActionResult> DeletePost(int id)
+    {
+        var userId = _jwt.GetUserIdFromToken(User);
+        var post   = await _db.BlogPosts.FindAsync(id);
+        if (post == null) return NotFound();
+
+        // Only the author or Admin can delete
+        var isAdmin = User.IsInRole("Admin");
+        if (!isAdmin && post.AuthorId != userId)
+            return Forbid();
+
+        _db.BlogPosts.Remove(post);
         await _db.SaveChangesAsync();
         return NoContent();
     }

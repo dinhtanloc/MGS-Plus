@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any, Dict, List, Optional
 
 import httpx
+from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 
 
 class MCPTool(dict):
@@ -37,6 +38,12 @@ class MCPClient:
         self.server_url = server_url.rstrip("/")
         self._timeout = timeout
 
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=1, max=4),
+        retry=retry_if_exception_type((httpx.TransportError, httpx.TimeoutException)),
+        reraise=True,
+    )
     async def list_tools(self) -> List[MCPTool]:
         async with httpx.AsyncClient(timeout=self._timeout) as client:
             resp = await client.post(
@@ -47,6 +54,12 @@ class MCPClient:
             data = resp.json()
             return [MCPTool(t) for t in data.get("result", {}).get("tools", [])]
 
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=1, max=4),
+        retry=retry_if_exception_type((httpx.TransportError, httpx.TimeoutException)),
+        reraise=True,
+    )
     async def call_tool(
         self,
         tool_name: str,

@@ -23,8 +23,9 @@ public class ChatbotController : ControllerBase
         _chatbot = chatbot;
     }
 
-    /// <summary>Tạo phiên chat mới</summary>
+    /// <summary>Create a new chat session</summary>
     [HttpPost("sessions")]
+    [Authorize]
     public async Task<IActionResult> CreateSession([FromBody] CreateChatSessionRequest req)
     {
         var userId = _jwt.GetUserIdFromToken(User);
@@ -33,7 +34,7 @@ public class ChatbotController : ControllerBase
             new ChatSessionDto(session.Id, session.Title, session.SessionType, 0, session.CreatedAt, session.UpdatedAt));
     }
 
-    /// <summary>Lấy danh sách phiên chat</summary>
+    /// <summary>Get the current user's chat sessions</summary>
     [HttpGet("sessions")]
     [Authorize]
     public async Task<IActionResult> GetSessions()
@@ -51,8 +52,9 @@ public class ChatbotController : ControllerBase
         return Ok(sessions);
     }
 
-    /// <summary>Chi tiết phiên chat + lịch sử tin nhắn</summary>
+    /// <summary>Chat session detail with message history</summary>
     [HttpGet("sessions/{id}")]
+    [Authorize]
     public async Task<IActionResult> GetSession(int id)
     {
         var userId = _jwt.GetUserIdFromToken(User);
@@ -70,8 +72,9 @@ public class ChatbotController : ControllerBase
         });
     }
 
-    /// <summary>Gửi tin nhắn đến chatbot</summary>
+    /// <summary>Send a message to the chatbot and get a response</summary>
     [HttpPost("sessions/{id}/messages")]
+    [Authorize]
     public async Task<IActionResult> SendMessage(int id, [FromBody] SendMessageRequest req)
     {
         var userId = _jwt.GetUserIdFromToken(User);
@@ -86,8 +89,9 @@ public class ChatbotController : ControllerBase
         }
     }
 
-    /// <summary>Streaming chat — trả về SSE với reasoning của agents</summary>
+    /// <summary>Streaming chat — returns SSE events with agent reasoning steps</summary>
     [HttpPost("sessions/{id}/messages/stream")]
+    [Authorize]
     public async Task StreamMessage(int id, [FromBody] SendMessageRequest req, CancellationToken ct)
     {
         var userId = _jwt.GetUserIdFromToken(User);
@@ -116,8 +120,9 @@ public class ChatbotController : ControllerBase
         }
     }
 
-    /// <summary>Chat nhanh (không cần tạo session trước)</summary>
+    /// <summary>Quick chat without creating a session first</summary>
     [HttpPost("quick")]
+    [Authorize]
     public async Task<IActionResult> QuickChat([FromBody] SendMessageRequest req)
     {
         var userId = _jwt.GetUserIdFromToken(User);

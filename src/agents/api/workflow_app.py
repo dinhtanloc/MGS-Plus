@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 from fastapi import Depends, FastAPI
+from prometheus_fastapi_instrumentator import Instrumentator
 
+from src.agents.api.deps import verify_api_key
 from src.agents.core.a2a.schemas import (
     A2ARequest,
     A2AResponse,
@@ -20,6 +22,8 @@ app = FastAPI(
     description="Executes platform tasks: account management, chatbot config, and more.",
     version="0.1.0",
 )
+
+Instrumentator().instrument(app).expose(app)
 
 
 def _run_workflow_task(request: str, user_id: str) -> str:
@@ -46,7 +50,8 @@ async def agent_card(settings: Settings = Depends(get_settings)) -> AgentCard:
     )
 
 
-@app.post("/a2a", response_model=A2AResponse, tags=["A2A"])
+@app.post("/a2a", response_model=A2AResponse, tags=["A2A"],
+          dependencies=[Depends(verify_api_key)])
 async def a2a_endpoint(request: A2ARequest) -> A2AResponse:
     if request.method != "tasks/send":
         return A2AResponse.err(request.id, -32601, f"Method '{request.method}' not found")

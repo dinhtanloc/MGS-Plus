@@ -72,7 +72,17 @@ public record NewsDto(
     string? Tags,
     int ViewCount,
     string? CategoryName,
-    DateTime PublishedAt
+    DateTime? PublishedAt
+);
+
+public record UpdateNewsRequest(
+    string? Title,
+    string? Content,
+    string? Summary,
+    int? CategoryId,
+    string? Tags,
+    string? ImageUrl,
+    bool? IsPublished
 );
 
 public record NewsSummaryDto(
@@ -83,5 +93,5 @@ public record NewsSummaryDto(
     string? Source,
     string? CategoryName,
     int ViewCount,
-    DateTime PublishedAt
+    DateTime? PublishedAt
 );

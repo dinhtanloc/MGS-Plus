@@ -4,6 +4,7 @@ from typing import Optional
 from uuid import uuid4
 
 import httpx
+from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 
 from src.agents.core.a2a.schemas import (
     A2ARequest,
@@ -20,12 +21,24 @@ class A2AClient:
     def __init__(self, timeout: float = 60.0) -> None:
         self._timeout = timeout
 
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=1, max=4),
+        retry=retry_if_exception_type((httpx.TransportError, httpx.TimeoutException)),
+        reraise=True,
+    )
     async def get_agent_card(self, base_url: str) -> AgentCard:
         async with httpx.AsyncClient(timeout=self._timeout) as client:
             resp = await client.get(f"{base_url}/.well-known/agent.json")
             resp.raise_for_status()
             return AgentCard.model_validate(resp.json())
 
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=1, max=4),
+        retry=retry_if_exception_type((httpx.TransportError, httpx.TimeoutException)),
+        reraise=True,
+    )
     async def send_task(
         self,
         base_url: str,

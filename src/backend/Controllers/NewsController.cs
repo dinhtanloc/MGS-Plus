@@ -21,7 +21,7 @@ public class NewsController : ControllerBase
         _jwt = jwt;
     }
 
-    /// <summary>Danh sách tin tức (public)</summary>
+    /// <summary>News list (public)</summary>
     [HttpGet]
     [AllowAnonymous]
     public async Task<IActionResult> GetNews(
@@ -51,7 +51,7 @@ public class NewsController : ControllerBase
         return Ok(new { total, page, pageSize, data = items });
     }
 
-    /// <summary>Chi tiết tin tức</summary>
+    /// <summary>News item detail</summary>
     [HttpGet("{id}")]
     [AllowAnonymous]
     public async Task<IActionResult> GetById(int id)
@@ -72,7 +72,7 @@ public class NewsController : ControllerBase
         ));
     }
 
-    /// <summary>Danh mục tin tức</summary>
+    /// <summary>News categories</summary>
     [HttpGet("categories")]
     [AllowAnonymous]
     public async Task<IActionResult> GetCategories()
@@ -83,7 +83,7 @@ public class NewsController : ControllerBase
         return Ok(cats);
     }
 
-    /// <summary>Thêm tin tức mới (Admin)</summary>
+    /// <summary>Create a news item (Admin)</summary>
     [HttpPost]
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> CreateNews([FromBody] CreateNewsRequest req)
@@ -108,7 +108,46 @@ public class NewsController : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = news.Id }, new { news.Id });
     }
 
-    /// <summary>Tin tức nổi bật (top view)</summary>
+    /// <summary>Update a news item (Admin)</summary>
+    [HttpPut("{id}")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> UpdateNews(int id, [FromBody] UpdateNewsRequest req)
+    {
+        var news = await _db.News.FindAsync(id);
+        if (news == null) return NotFound();
+
+        if (req.Title      != null) news.Title      = req.Title;
+        if (req.Content    != null) news.Content    = req.Content;
+        if (req.Summary    != null) news.Summary    = req.Summary;
+        if (req.ImageUrl   != null) news.ImageUrl   = req.ImageUrl;
+        if (req.Tags       != null) news.Tags       = req.Tags;
+        if (req.CategoryId != null) news.CategoryId = req.CategoryId;
+        if (req.IsPublished.HasValue)
+        {
+            news.IsPublished = req.IsPublished.Value;
+            if (req.IsPublished.Value && news.PublishedAt == null)
+                news.PublishedAt = DateTime.UtcNow;
+        }
+        news.UpdatedAt = DateTime.UtcNow;
+
+        await _db.SaveChangesAsync();
+        return NoContent();
+    }
+
+    /// <summary>Delete a news item (Admin)</summary>
+    [HttpDelete("{id}")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> DeleteNews(int id)
+    {
+        var news = await _db.News.FindAsync(id);
+        if (news == null) return NotFound();
+
+        _db.News.Remove(news);
+        await _db.SaveChangesAsync();
+        return NoContent();
+    }
+
+    /// <summary>Featured news items (top by view count)</summary>
     [HttpGet("featured")]
     [AllowAnonymous]
     public async Task<IActionResult> GetFeatured([FromQuery] int limit = 5)

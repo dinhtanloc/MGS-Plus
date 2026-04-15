@@ -45,8 +45,9 @@ public class News
     public bool IsPublished { get; set; } = true;
     public int ViewCount { get; set; } = 0;
 
-    public DateTime PublishedAt { get; set; } = DateTime.UtcNow;
+    public DateTime? PublishedAt { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime? UpdatedAt { get; set; }
 
     // Navigation
     public NewsCategory? Category { get; set; }

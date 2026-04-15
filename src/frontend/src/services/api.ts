@@ -1,4 +1,10 @@
-import axios from 'axios'
+import axios, { type AxiosRequestConfig } from 'axios'
+import type {
+  RegisterRequest, LoginRequest, AuthResponse, UserDto,
+  UserProfile, CreateAppointmentRequest, UpdateAppointmentRequest,
+  CreateBlogPostRequest, StreamEvent,
+  PaginatedResponse, AppointmentDto, MedicalRecordDto, DoctorDto, NewsDto, BlogPostDto
+} from '@/types/api'
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
@@ -6,83 +12,144 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' }
 })
 
-// Attach JWT token to every request
+// ── Token refresh queue ────────────────────────────────────────────────────────
+let isRefreshing = false
+let refreshSubscribers: Array<(token: string) => void> = []
+
+function subscribeTokenRefresh(cb: (token: string) => void) {
+  refreshSubscribers.push(cb)
+}
+function onTokenRefreshed(newToken: string) {
+  refreshSubscribers.forEach(cb => cb(newToken))
+  refreshSubscribers = []
+}
+
+// ── Request interceptor: attach JWT ───────────────────────────────────────────
 api.interceptors.request.use(config => {
   const token = localStorage.getItem('token')
   if (token) config.headers.Authorization = `Bearer ${token}`
   return config
 })
 
-// Handle 401 — redirect to login
+// ── Response interceptor: silent refresh on 401 ───────────────────────────────
 api.interceptors.response.use(
   res => res,
-  err => {
-    if (err.response?.status === 401) {
-      localStorage.removeItem('token')
-      window.location.href = '/login'
+  async err => {
+    const original = err.config as AxiosRequestConfig & { _retry?: boolean }
+
+    if (err.response?.status === 401 && !original._retry) {
+      const refreshToken = localStorage.getItem('refreshToken')
+
+      if (!refreshToken) {
+        // No refresh token — redirect to login
+        localStorage.removeItem('token')
+        import('@/router').then(m => m.default.push('/login'))
+        return Promise.reject(err)
+      }
+
+      if (isRefreshing) {
+        // Queue the request until refresh completes
+        return new Promise(resolve => {
+          subscribeTokenRefresh(token => {
+            original.headers = { ...original.headers, Authorization: `Bearer ${token}` }
+            resolve(api(original))
+          })
+        })
+      }
+
+      original._retry = true
+      isRefreshing = true
+
+      try {
+        const { data } = await axios.post<AuthResponse>(
+          `${import.meta.env.VITE_API_BASE_URL || '/api'}/auth/refresh`,
+          { refreshToken }
+        )
+        localStorage.setItem('token', data.token)
+        if (data.refreshToken) localStorage.setItem('refreshToken', data.refreshToken)
+
+        onTokenRefreshed(data.token)
+        original.headers = { ...original.headers, Authorization: `Bearer ${data.token}` }
+        return api(original)
+      } catch {
+        // Refresh failed — clear session and redirect
+        localStorage.removeItem('token')
+        localStorage.removeItem('refreshToken')
+        import('@/router').then(m => m.default.push('/login'))
+        return Promise.reject(err)
+      } finally {
+        isRefreshing = false
+      }
     }
+
     return Promise.reject(err)
   }
 )
 
-// ── Auth ─────────────────────────────────────────────────────
+// ── Auth ──────────────────────────────────────────────────────────────────────
 export const authApi = {
-  register: (data: RegisterRequest) => api.post('/auth/register', data),
-  login: (data: LoginRequest) => api.post<AuthResponse>('/auth/login', data),
-  me: () => api.get('/auth/me'),
-  changePassword: (data: { currentPassword: string; newPassword: string }) =>
-    api.post('/auth/change-password', data)
+  register:      (data: RegisterRequest)                                  => api.post<AuthResponse>('/auth/register', data),
+  login:         (data: LoginRequest)                                     => api.post<AuthResponse>('/auth/login', data),
+  me:            ()                                                       => api.get<UserDto>('/auth/me'),
+  changePassword:(data: { currentPassword: string; newPassword: string }) => api.post('/auth/change-password', data),
+  refresh:       (refreshToken: string)                                   => api.post<AuthResponse>('/auth/refresh', { refreshToken }),
+  logout:        (refreshToken: string)                                   => api.post('/auth/logout', { refreshToken }),
+  sendVerification: ()                                                    => api.post('/auth/send-verification-email'),
 }
 
-// ── User / Profile ───────────────────────────────────────────
+// ── User / Profile ────────────────────────────────────────────────────────────
 export const userApi = {
-  getProfile: () => api.get('/users/profile'),
+  getProfile:    ()                       => api.get('/users/profile'),
   updateProfile: (data: Partial<UserProfile>) => api.put('/users/profile', data)
 }
 
-// ── Appointments ─────────────────────────────────────────────
+// ── Appointments ──────────────────────────────────────────────────────────────
 export const appointmentApi = {
-  list: (params?: { status?: string; page?: number }) => api.get('/appointments', { params }),
-  create: (data: CreateAppointmentRequest) => api.post('/appointments', data),
-  get: (id: number) => api.get(`/appointments/${id}`),
-  update: (id: number, data: Partial<UpdateAppointmentRequest>) => api.patch(`/appointments/${id}`, data),
-  getDoctors: (specialty?: string) => api.get('/appointments/doctors', { params: { specialty } })
+  list:       (params?: { status?: string; page?: number })        => api.get<PaginatedResponse<AppointmentDto>>('/appointments', { params }),
+  create:     (data: CreateAppointmentRequest)                     => api.post<AppointmentDto>('/appointments', data),
+  get:        (id: number)                                         => api.get<AppointmentDto>(`/appointments/${id}`),
+  update:     (id: number, data: Partial<UpdateAppointmentRequest>)=> api.patch(`/appointments/${id}`, data),
+  getDoctors: (specialty?: string)                                 => api.get<DoctorDto[]>('/appointments/doctors', { params: { specialty } }),
+  getDoctorSchedule: (id: number)                                  => api.get(`/appointments/doctors/${id}/schedule`),
+  getDoctorSlots:    (id: number, date: string)                    => api.get(`/appointments/doctors/${id}/slots`, { params: { date } }),
 }
 
-// ── Blog ─────────────────────────────────────────────────────
+// ── Blog ──────────────────────────────────────────────────────────────────────
 export const blogApi = {
-  list: (params?: { categoryId?: number; search?: string; page?: number }) => api.get('/blog', { params }),
-  getBySlug: (slug: string) => api.get(`/blog/${slug}`),
-  getCategories: () => api.get('/blog/categories'),
-  create: (data: CreateBlogPostRequest) => api.post('/blog', data),
-  update: (id: number, data: Partial<CreateBlogPostRequest>) => api.put(`/blog/${id}`, data)
+  list:          (params?: { categoryId?: number; search?: string; page?: number }) => api.get<PaginatedResponse<BlogPostDto>>('/blog', { params }),
+  getBySlug:     (slug: string)                                                     => api.get<BlogPostDto>(`/blog/${slug}`),
+  getCategories: ()                                                                 => api.get('/blog/categories'),
+  create:        (data: CreateBlogPostRequest)                                      => api.post<BlogPostDto>('/blog', data),
+  update:        (id: number, data: Partial<CreateBlogPostRequest>)                 => api.put(`/blog/${id}`, data),
+  delete:        (id: number)                                                       => api.delete(`/blog/${id}`),
 }
 
-// ── News ─────────────────────────────────────────────────────
+// ── News ──────────────────────────────────────────────────────────────────────
 export const newsApi = {
-  list: (params?: { categoryId?: number; search?: string; page?: number }) => api.get('/news', { params }),
-  get: (id: number) => api.get(`/news/${id}`),
-  featured: (limit?: number) => api.get('/news/featured', { params: { limit } }),
-  getCategories: () => api.get('/news/categories')
+  list:          (params?: { categoryId?: number; search?: string; page?: number }) => api.get<PaginatedResponse<NewsDto>>('/news', { params }),
+  get:           (id: number)                                                        => api.get<NewsDto>(`/news/${id}`),
+  featured:      (limit?: number)                                                    => api.get<NewsDto[]>('/news/featured', { params: { limit } }),
+  getCategories: ()                                                                  => api.get('/news/categories'),
+  update:        (id: number, data: Partial<NewsDto>)                               => api.put(`/news/${id}`, data),
+  delete:        (id: number)                                                        => api.delete(`/news/${id}`),
 }
 
-// ── Chatbot ──────────────────────────────────────────────────
+// ── Chatbot ───────────────────────────────────────────────────────────────────
 export const chatApi = {
-  createSession: (data: { title?: string; sessionType?: string }) => api.post('/chatbot/sessions', data),
-  getSessions: () => api.get('/chatbot/sessions'),
-  getSession: (id: number) => api.get(`/chatbot/sessions/${id}`),
-  sendMessage: (sessionId: number, data: { content: string; contextType?: string }) =>
+  createSession: (data: { title?: string; sessionType?: string })               => api.post('/chatbot/sessions', data),
+  getSessions:   ()                                                              => api.get('/chatbot/sessions'),
+  getSession:    (id: number)                                                    => api.get(`/chatbot/sessions/${id}`),
+  sendMessage:   (sessionId: number, data: { content: string; contextType?: string }) =>
     api.post(`/chatbot/sessions/${sessionId}/messages`, data),
-  quickChat: (content: string) => api.post('/chatbot/quick', { content }),
+  quickChat:     (content: string)                                               => api.post('/chatbot/quick', { content }),
 
-  /** Open an SSE stream for a session message. Calls `onEvent` for each parsed event. */
   streamMessage(
     sessionId: number,
     content: string,
     onEvent: (event: StreamEvent) => void,
     signal?: AbortSignal
   ): Promise<void> {
-    const token = localStorage.getItem('token')
+    const token   = localStorage.getItem('token')
     const baseUrl = import.meta.env.VITE_API_BASE_URL || '/api'
     return fetch(`${baseUrl}/chatbot/sessions/${sessionId}/messages/stream`, {
       method: 'POST',
@@ -94,7 +161,7 @@ export const chatApi = {
       signal
     }).then(async response => {
       if (!response.ok) throw new Error(`HTTP ${response.status}`)
-      const reader = response.body!.getReader()
+      const reader  = response.body!.getReader()
       const decoder = new TextDecoder()
       let buffer = ''
       try {
@@ -117,29 +184,18 @@ export const chatApi = {
   }
 }
 
-// ── Medical Records ───────────────────────────────────────────
+// ── Medical Records ───────────────────────────────────────────────────────────
 export const medicalApi = {
-  list: (params?: { page?: number }) => api.get('/medicalrecords', { params }),
-  get: (id: number) => api.get(`/medicalrecords/${id}`)
+  list: (params?: { page?: number }) => api.get<PaginatedResponse<MedicalRecordDto>>('/medicalrecords', { params }),
+  get:  (id: number)                 => api.get<MedicalRecordDto>(`/medicalrecords/${id}`)
 }
 
-// ── Types ────────────────────────────────────────────────────
-export interface StreamEvent {
-  type: 'start' | 'session' | 'reasoning' | 'tool_call' | 'response_chunk' | 'answer' | 'complete' | 'error'
-  content?: string
-  agent?: string
-  tool?: string
-  messageId?: number
-  userMessageId?: number
-  sessionId?: number
-  thread_id?: string
-}
+export default api
 
-export interface RegisterRequest { email: string; password: string; firstName: string; lastName: string; phoneNumber?: string }
-export interface LoginRequest { email: string; password: string }
-export interface AuthResponse { token: string; tokenType: string; expiresIn: number; user: UserDto }
-export interface UserDto { id: number; email: string; firstName: string; lastName: string; phoneNumber?: string; role: string; createdAt: string }
-export interface UserProfile { firstName?: string; lastName?: string; phoneNumber?: string; dateOfBirth?: string; address?: string; insuranceNumber?: string; bloodType?: string; allergies?: string }
-export interface CreateAppointmentRequest { scheduledAt: string; doctorId?: number; department?: string; description?: string }
-export interface UpdateAppointmentRequest { scheduledAt?: string; status?: string; notes?: string; department?: string }
-export interface CreateBlogPostRequest { title: string; content: string; summary?: string; categoryId?: number; tags?: string; thumbnailUrl?: string; isPublished?: boolean }
+// ── Re-export types for convenience ──────────────────────────────────────────
+export type {
+  RegisterRequest, LoginRequest, AuthResponse, UserDto, UserProfile,
+  CreateAppointmentRequest, UpdateAppointmentRequest,
+  CreateBlogPostRequest, StreamEvent,
+  PaginatedResponse, AppointmentDto, MedicalRecordDto, DoctorDto, NewsDto, BlogPostDto
+}

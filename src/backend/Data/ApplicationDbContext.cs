@@ -18,6 +18,8 @@ public class ApplicationDbContext : DbContext
     public DbSet<ChatSession> ChatSessions => Set<ChatSession>();
     public DbSet<ChatMessage> ChatMessages => Set<ChatMessage>();
     public DbSet<MedicalRecord> MedicalRecords => Set<MedicalRecord>();
+    public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+    public DbSet<DoctorSchedule> DoctorSchedules => Set<DoctorSchedule>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -127,6 +129,25 @@ public class ApplicationDbContext : DbContext
              .WithMany(d => d.MedicalRecords)
              .HasForeignKey(r => r.DoctorId)
              .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // DoctorSchedule
+        modelBuilder.Entity<DoctorSchedule>(e =>
+        {
+            e.HasOne(s => s.Doctor)
+             .WithMany()
+             .HasForeignKey(s => s.DoctorId)
+             .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // RefreshToken
+        modelBuilder.Entity<RefreshToken>(e =>
+        {
+            e.HasIndex(t => t.Token).IsUnique();
+            e.HasOne(t => t.User)
+             .WithMany()
+             .HasForeignKey(t => t.UserId)
+             .OnDelete(DeleteBehavior.Cascade);
         });
 
         // Seed data

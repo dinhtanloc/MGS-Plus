@@ -37,6 +37,8 @@ volumes:
   qdrant-data:
   neo4j-data:
   neo4j-logs:
+  prometheus-data:
+  grafana-data:
 
 # ── Services ───────────────────────────────────────────────────────────────────
 services:
@@ -137,7 +139,7 @@ services:
       sqlserver:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-sf", "http://localhost:5000/health"]
+      test: ["CMD-SHELL", "wget -qO- http://localhost:5000/health || exit 1"]
       interval: 30s
       timeout: 10s
       start_period: 30s
@@ -225,6 +227,63 @@ services:
       start_period: 20s
       retries: 3
 
+  # ── Prometheus ────────────────────────────────────────────────────────────────
+  prometheus:
+    image: prom/prometheus:v2.52.0
+    <<: [*restart, *logging]
+    volumes:
+      - ./docker/services/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    ports:
+      - "${PROMETHEUS_PORT:-9091}:9090"
+    networks:
+      - mgs-net
+
+  # ── Grafana ────────────────────────────────────────────────────────────────────
+  grafana:
+    image: grafana/grafana:10.4.3
+    <<: [*restart, *logging]
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - grafana-data:/var/lib/grafana
+    ports:
+      - "${GRAFANA_PORT:-3001}:3000"
+    networks:
+      - mgs-net
+    depends_on:
+      - prometheus
+
+  # ── MCP Wikipedia Server ─────────────────────────────────────────────────────
+  mcp-wiki:
+    build:
+      context: ..
+      dockerfile: infra/docker/services/agents/Dockerfile
+      args:
+        AGENT: mcp_wiki
+    image: ${COMPOSE_PROJECT_NAME:-mgsplus}-mcp-wiki:latest
+    <<: [*restart, *logging]
+    environment:
+      MCP_WIKI_PORT: 8020
+      WIKI_LANG: vi
+    command: ["python", "-m", "src.agents.core.mcp.wiki_server"]
+    ports:
+      - "${MCP_WIKI_PORT:-8020}:8020"
+    networks:
+      - mgs-net
+    healthcheck:
+      test: ["CMD", "python", "-c", "import httpx; httpx.get('http://localhost:8020/health').raise_for_status()"]
+      interval: 30s
+      timeout: 10s
+      start_period: 15s
+      retries: 3
+
   # ── Frontend (Nginx) ──────────────────────────────────────────────────────────
   frontend:
     build:
@@ -243,7 +302,7 @@ services:
     depends_on:
       - backend
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost/"]
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/"]
       interval: 30s
       timeout: 5s
       start_period: 10s

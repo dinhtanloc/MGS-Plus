@@ -1,11 +1,21 @@
 from __future__ import annotations
 
+import asyncio
+import concurrent.futures
 from typing import Any, Optional, Type
 
 from crewai.tools import BaseTool
 from pydantic import BaseModel, Field
 
 from src.agents.core.config import Settings, get_settings
+from src.agents.core.internal_api_client import InternalApiClient
+
+
+def _run_async(coro):
+    """Run an async coroutine safely even when an event loop is already running."""
+    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+        future = pool.submit(asyncio.run, coro)
+        return future.result()
 
 
 # ── Schema helpers ────────────────────────────────────────────────────────────
@@ -47,18 +57,33 @@ class ChangePasswordTool(BaseTool):
     args_schema: Type[BaseModel] = ChangePasswordInput
 
     _settings: Settings = None  # type: ignore
+    _api: InternalApiClient = None  # type: ignore
 
     def __init__(self, settings: Optional[Settings] = None, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self._settings = settings or get_settings()
+        self._api = InternalApiClient(self._settings)
 
     def _run(self, user_id: str, new_password_hint: str) -> str:
-        # In production: call the backend auth API to trigger a password reset email
-        # For now: stub response
-        return (
-            f"Password reset initiated for user '{user_id}'. "
-            "A secure reset link has been sent to their registered email."
-        )
+        return _run_async(self._call_reset(user_id))
+
+    async def _call_reset(self, user_id: str) -> str:
+        try:
+            resp = await self._api.post(
+                "/api/auth/send-verification-email",
+                json={"userId": user_id},
+            )
+            if resp.status_code in (200, 204):
+                return (
+                    f"Password reset email sent to user '{user_id}'. "
+                    "They will receive a secure link to set a new password."
+                )
+            return (
+                f"Backend returned {resp.status_code} when sending reset email for "
+                f"user '{user_id}'. Please try again later."
+            )
+        except Exception as exc:
+            return f"Could not reach backend to initiate password reset: {exc}"
 
 
 class AuthSettingsTool(BaseTool):
@@ -70,17 +95,33 @@ class AuthSettingsTool(BaseTool):
     args_schema: Type[BaseModel] = AuthSettingsInput
 
     _settings: Settings = None  # type: ignore
+    _api: InternalApiClient = None  # type: ignore
 
     def __init__(self, settings: Optional[Settings] = None, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self._settings = settings or get_settings()
+        self._api = InternalApiClient(self._settings)
 
     def _run(self, user_id: str, action: str) -> str:
-        # In production: call backend auth API
         supported = {"enable_2fa", "disable_2fa", "reset_session", "revoke_tokens"}
         if action not in supported:
-            return f"Unknown action '{action}'. Supported: {', '.join(supported)}."
-        return f"Auth action '{action}' successfully applied to user '{user_id}'."
+            return f"Unknown action '{action}'. Supported: {', '.join(sorted(supported))}."
+        return _run_async(self._call_auth_action(user_id, action))
+
+    async def _call_auth_action(self, user_id: str, action: str) -> str:
+        try:
+            resp = await self._api.post(
+                f"/api/auth/{action.replace('_', '-')}",
+                json={"userId": user_id},
+            )
+            if resp.status_code in (200, 204):
+                return f"Auth action '{action}' successfully applied to user '{user_id}'."
+            return (
+                f"Backend returned {resp.status_code} for action '{action}' "
+                f"on user '{user_id}'."
+            )
+        except Exception as exc:
+            return f"Could not reach backend for auth action '{action}': {exc}"
 
 
 class WebActionTool(BaseTool):
@@ -92,14 +133,33 @@ class WebActionTool(BaseTool):
     args_schema: Type[BaseModel] = WebActionInput
 
     _settings: Settings = None  # type: ignore
+    _api: InternalApiClient = None  # type: ignore
 
     def __init__(self, settings: Optional[Settings] = None, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self._settings = settings or get_settings()
+        self._api = InternalApiClient(self._settings)
 
     def _run(self, action: str, user_id: str, payload: dict) -> str:
-        # In production: call the MGSPlus backend REST API
-        return (
-            f"Action '{action}' executed for user '{user_id}' "
-            f"with parameters {payload}. Operation completed successfully."
-        )
+        return _run_async(self._call_web_action(action, user_id, payload))
+
+    async def _call_web_action(self, action: str, user_id: str, payload: dict) -> str:
+        endpoint_map = {
+            "update_profile":     f"/api/users/{user_id}/profile",
+            "view_notifications": f"/api/users/{user_id}/notifications",
+            "configure_chatbot":  f"/api/users/{user_id}/chatbot-settings",
+        }
+        path = endpoint_map.get(action, f"/api/actions/{action}")
+        try:
+            resp = await self._api.patch(path, json={**payload, "userId": user_id})
+            if resp.status_code in (200, 204):
+                return (
+                    f"Action '{action}' executed for user '{user_id}' "
+                    f"with parameters {payload}. Operation completed successfully."
+                )
+            return (
+                f"Backend returned {resp.status_code} for action '{action}' "
+                f"on user '{user_id}'."
+            )
+        except Exception as exc:
+            return f"Could not reach backend for action '{action}': {exc}"

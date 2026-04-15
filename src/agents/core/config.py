@@ -159,6 +159,12 @@ class Settings(BaseSettings):
         alias="MCP_WIKI_URL",
     )
 
+    # ── Agent API key (for service-to-service auth) ──────────────────────────
+    agent_api_key: str = Field(default="", alias="AGENT_API_KEY")
+
+    # ── Backend URL (for workflow tools to call backend REST API) ─────────────
+    backend_url: str = Field(default="http://localhost:5000", alias="BACKEND_URL")
+
     # ── Memory (from agents-config.yml) ──────────────────────────────────────
     short_term_ttl_seconds: int = Field(
         default=_get(_agents, "memory", "short_term_ttl_seconds", default=3600),

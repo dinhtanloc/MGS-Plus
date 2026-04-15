@@ -1,6 +1,7 @@
 # SQL Server 2022 — MGSPlus
 # Secrets (SA_PASSWORD) are injected at RUNTIME via docker-compose env_file.
 # No secrets baked into the image.
+# Running as root to avoid volume permission issues on ARM64/Docker Desktop.
 FROM mcr.microsoft.com/mssql/server:2022-latest
 
 USER root
@@ -14,9 +15,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Prepare data directories
 RUN mkdir -p /var/opt/mssql/backup /var/opt/mssql/data \
-    && chmod 755 /var/opt/mssql/backup /var/opt/mssql/data
-
-USER mssql
+    && chmod -R 777 /var/opt/mssql
 
 # Runtime env vars (injected by docker-compose via env_file: ../../.env):
 #   SA_PASSWORD     — sysadmin password

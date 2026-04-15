@@ -10,6 +10,13 @@ const routes = [
   { path: '/blog', name: 'blog', component: () => import('@/views/blog/BlogListPage.vue') },
   { path: '/blog/:slug', name: 'blog-detail', component: () => import('@/views/blog/BlogDetailPage.vue') },
   { path: '/services', name: 'services', component: () => import('@/views/home/ServicesPage.vue') },
+  { path: '/doctors', name: 'doctors', component: () => import('@/views/appointment/DoctorListPage.vue') },
+  {
+    path: '/chat',
+    name: 'chat',
+    component: () => import('@/views/chat/ChatPage.vue'),
+    meta: { requiresAuth: true }
+  },
   {
     path: '/appointment',
     name: 'appointment',
@@ -23,6 +30,12 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/appointments/:id',
+    name: 'appointment-detail',
+    component: () => import('@/views/appointment/AppointmentDetailPage.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/profile',
     name: 'profile',
     component: () => import('@/views/profile/ProfilePage.vue'),
@@ -33,6 +46,18 @@ const routes = [
     name: 'medical-records',
     component: () => import('@/views/medical/MedicalRecordsPage.vue'),
     meta: { requiresAuth: true }
+  },
+  {
+    path: '/medical-records/:id',
+    name: 'medical-record-detail',
+    component: () => import('@/views/medical/MedicalRecordDetailPage.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/admin/blog',
+    name: 'admin-blog',
+    component: () => import('@/views/admin/BlogAdminPage.vue'),
+    meta: { requiresAuth: true, requiresRole: 'Admin' }
   },
   { path: '/:pathMatch(.*)*', name: 'not-found', component: () => import('@/views/NotFoundPage.vue') }
 ]

@@ -19,7 +19,12 @@ public record AuthResponse(
     string Token,
     string TokenType,
     int ExpiresIn,
-    UserDto User
+    UserDto User,
+    string? RefreshToken = null
+);
+
+public record RefreshTokenRequest(
+    [Required] string RefreshToken
 );
 
 public record UserDto(

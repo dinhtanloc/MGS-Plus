@@ -6,6 +6,8 @@ import json
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.responses import StreamingResponse
 
+from prometheus_fastapi_instrumentator import Instrumentator
+
 from src.agents.core.a2a.schemas import (
     A2ARequest,
     A2AResponse,
@@ -14,7 +16,7 @@ from src.agents.core.a2a.schemas import (
     TaskOutput,
 )
 from src.agents.core.config import Settings, get_settings
-from src.agents.api.deps import get_main_crew
+from src.agents.api.deps import get_main_crew, verify_api_key
 from src.agents.api.schemas.chat import ChatRequest, ChatResponse
 from src.agents.crews.main_crew import MainCrew
 
@@ -23,6 +25,8 @@ app = FastAPI(
     description="Entry point for all user queries — routes to Documents or Workflow agent.",
     version="0.1.0",
 )
+
+Instrumentator().instrument(app).expose(app)
 
 
 # ── A2A protocol ──────────────────────────────────────────────────────────────
@@ -40,7 +44,8 @@ async def agent_card(settings: Settings = Depends(get_settings)) -> AgentCard:
     )
 
 
-@app.post("/a2a", response_model=A2AResponse, tags=["A2A"])
+@app.post("/a2a", response_model=A2AResponse, tags=["A2A"],
+          dependencies=[Depends(verify_api_key)])
 async def a2a_endpoint(
     request: A2ARequest,
     crew: MainCrew = Depends(get_main_crew),
@@ -67,7 +72,8 @@ async def a2a_endpoint(
 
 # ── REST chat endpoint (for direct callers, e.g. frontend) ───────────────────
 
-@app.post("/chat", response_model=ChatResponse, tags=["Chat"])
+@app.post("/chat", response_model=ChatResponse, tags=["Chat"],
+          dependencies=[Depends(verify_api_key)])
 async def chat(
     body: ChatRequest,
     crew: MainCrew = Depends(get_main_crew),
@@ -85,7 +91,8 @@ async def chat(
 
 # ── Streaming chat endpoint ───────────────────────────────────────────────────
 
-@app.post("/chat/stream", tags=["Chat"])
+@app.post("/chat/stream", tags=["Chat"],
+          dependencies=[Depends(verify_api_key)])
 async def chat_stream(
     body: ChatRequest,
     crew: MainCrew = Depends(get_main_crew),

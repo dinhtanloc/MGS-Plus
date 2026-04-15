@@ -24,8 +24,15 @@ dependencies = [
     "sqlalchemy[asyncio]>=2.0.30",
     "pymssql>=2.3.0",
     "neo4j>=5.20.0",
+    # Text processing / embeddings
+    "langchain-text-splitters>=0.3.0",
+    "tenacity>=9.0.0",
+    # Observability
+    "prometheus-fastapi-instrumentator>=7.0.0",
     # MCP
     "mcp>=1.0.0",
+    # Wikipedia MCP
+    "wikipedia-api>=0.7.1",
     # Config / schemas
     "pydantic>=2.7.0",
     "pydantic-settings>=2.3.0",

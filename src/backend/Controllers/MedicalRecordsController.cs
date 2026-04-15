@@ -21,7 +21,7 @@ public class MedicalRecordsController : ControllerBase
         _jwt = jwt;
     }
 
-    /// <summary>Lấy hồ sơ y tế của người dùng</summary>
+    /// <summary>Get the current user's medical records</summary>
     [HttpGet]
     public async Task<IActionResult> GetMyRecords([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
@@ -47,7 +47,7 @@ public class MedicalRecordsController : ControllerBase
         return Ok(new { total, page, pageSize, data = records });
     }
 
-    /// <summary>Chi tiết hồ sơ y tế</summary>
+    /// <summary>Medical record detail</summary>
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById(int id)
     {
@@ -69,7 +69,7 @@ public class MedicalRecordsController : ControllerBase
         });
     }
 
-    /// <summary>Thêm hồ sơ y tế (Doctor/Admin)</summary>
+    /// <summary>Create a medical record (Doctor/Admin)</summary>
     [HttpPost]
     [Authorize(Roles = "Doctor,Admin")]
     public async Task<IActionResult> CreateRecord([FromBody] CreateMedicalRecordRequest req)

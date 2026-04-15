@@ -15,7 +15,7 @@ databases:
     host: qdrant            # Docker service name; override with QDRANT_HOST
     port: 6333
     grpc_port: 6334
-    vector_size: 1536
+    vector_size: 768
     shared_collection: knowledge_shared
 
   neo4j:

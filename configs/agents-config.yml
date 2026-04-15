@@ -34,4 +34,4 @@ memory:
 mcp:
   zalo_url: ""              # override with MCP_ZALO_URL
   messenger_url: ""         # override with MCP_MESSENGER_URL
-  wiki_url: ""              # override with MCP_WIKI_URL
+  wiki_url: "http://mcp-wiki:8020"   # override with MCP_WIKI_URL; set "" to disable
