@@ -24,6 +24,15 @@ public class Appointment
 
     public int? QueueNumber { get; set; }
 
+    // Doctor action fields
+    [MaxLength(1000)]
+    public string? RescheduleReason { get; set; }
+
+    public DateTime? RescheduledTo { get; set; }
+
+    [MaxLength(1000)]
+    public string? CancelReason { get; set; }
+
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 

@@ -17,8 +17,15 @@ export const useAuthStore = defineStore('auth', () => {
     _applyAuthResponse(data)
   }
 
-  async function register(payload: { email: string; password: string; firstName: string; lastName: string; phoneNumber?: string }) {
+  const pendingDoctor = ref(false)
+
+  async function register(payload: {
+    email: string; password: string; firstName: string; lastName: string
+    phoneNumber?: string; requestedRole?: 'Patient' | 'Doctor'
+    specialty?: string; licenseNumber?: string; bio?: string; consultationFee?: number
+  }) {
     const { data } = await authApi.register(payload)
+    pendingDoctor.value = !!(data as any).pendingDoctor
     _applyAuthResponse(data)
   }
 
@@ -57,5 +64,5 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.removeItem('refreshToken')
   }
 
-  return { token, refreshToken, user, isLoggedIn, isAdmin, isDoctor, login, register, fetchMe, logout }
+  return { token, refreshToken, user, isLoggedIn, isAdmin, isDoctor, pendingDoctor, login, register, fetchMe, logout }
 })

@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "VEmgts9wuQg=",
+  "dgSpecHash": "4q4r2HOzFno=",
   "success": true,
   "projectFilePath": "/Users/dinhtanloc/Projects/MGSPlus/src/backend/MGSPlus.Api.csproj",
   "expectedPackageFiles": [
@@ -140,7 +140,7 @@
     "/Users/dinhtanloc/.nuget/packages/system.objectmodel/4.3.0/system.objectmodel.4.3.0.nupkg.sha512",
     "/Users/dinhtanloc/.nuget/packages/system.private.uri/4.3.2/system.private.uri.4.3.2.nupkg.sha512",
     "/Users/dinhtanloc/.nuget/packages/system.reflection/4.3.0/system.reflection.4.3.0.nupkg.sha512",
-    "/Users/dinhtanloc/.nuget/packages/system.reflection.emit/4.3.0/system.reflection.emit.4.3.0.nupkg.sha512",
+    "/Users/dinhtanloc/.nuget/packages/system.reflection.emit/4.7.0/system.reflection.emit.4.7.0.nupkg.sha512",
     "/Users/dinhtanloc/.nuget/packages/system.reflection.emit.ilgeneration/4.3.0/system.reflection.emit.ilgeneration.4.3.0.nupkg.sha512",
     "/Users/dinhtanloc/.nuget/packages/system.reflection.emit.lightweight/4.3.0/system.reflection.emit.lightweight.4.3.0.nupkg.sha512",
     "/Users/dinhtanloc/.nuget/packages/system.reflection.extensions/4.3.0/system.reflection.extensions.4.3.0.nupkg.sha512",
@@ -181,7 +181,9 @@
     "/Users/dinhtanloc/.nuget/packages/system.threading.timer/4.3.0/system.threading.timer.4.3.0.nupkg.sha512",
     "/Users/dinhtanloc/.nuget/packages/system.windows.extensions/6.0.0/system.windows.extensions.6.0.0.nupkg.sha512",
     "/Users/dinhtanloc/.nuget/packages/system.xml.readerwriter/4.3.0/system.xml.readerwriter.4.3.0.nupkg.sha512",
-    "/Users/dinhtanloc/.nuget/packages/system.xml.xdocument/4.3.0/system.xml.xdocument.4.3.0.nupkg.sha512"
+    "/Users/dinhtanloc/.nuget/packages/system.xml.xdocument/4.3.0/system.xml.xdocument.4.3.0.nupkg.sha512",
+    "/Users/dinhtanloc/.nuget/packages/tesseract/5.2.0/tesseract.5.2.0.nupkg.sha512",
+    "/Users/dinhtanloc/.nuget/packages/yamldotnet/16.3.0/yamldotnet.16.3.0.nupkg.sha512"
   ],
   "logs": [
     {
@@ -192,6 +194,18 @@
       "warningLevel": 1,
       "filePath": "/Users/dinhtanloc/Projects/MGSPlus/src/backend/MGSPlus.Api.csproj",
       "libraryId": "System.IdentityModel.Tokens.Jwt",
+      "targetGraphs": [
+        "net9.0"
+      ]
+    },
+    {
+      "code": "NU1902",
+      "level": "Warning",
+      "message": "Package 'MailKit' 4.8.0 has a known moderate severity vulnerability, https://github.com/advisories/GHSA-9j88-vvj5-vhgr",
+      "projectPath": "/Users/dinhtanloc/Projects/MGSPlus/src/backend/MGSPlus.Api.csproj",
+      "warningLevel": 1,
+      "filePath": "/Users/dinhtanloc/Projects/MGSPlus/src/backend/MGSPlus.Api.csproj",
+      "libraryId": "MailKit",
       "targetGraphs": [
         "net9.0"
       ]

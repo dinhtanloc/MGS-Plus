@@ -1,0 +1,1395 @@
+2026-04-16 02:09:21.418 [WRN] DB migration skipped — database not reachable: An error was generated for warning 'Microsoft.EntityFrameworkCore.Migrations.PendingModelChangesWarning': The model for context 'ApplicationDbContext' has pending changes. Add a new migration before updating the database. This exception can be suppressed or logged by passing event ID 'RelationalEventId.PendingModelChangesWarning' to the 'ConfigureWarnings' method in 'DbContext.OnConfiguring' or 'AddDbContext'.
+2026-04-16 02:09:21.493 [INF] Now listening on: http://localhost:5000
+2026-04-16 02:09:21.493 [INF] Application started. Press Ctrl+C to shut down.
+2026-04-16 02:09:21.493 [INF] Hosting environment: Development
+2026-04-16 02:09:21.493 [INF] Content root path: /Users/dinhtanloc/Projects/MGSPlus/src/backend
+2026-04-16 02:09:46.938 [INF] Application is shutting down...
+2026-04-16 02:27:47.735 [INF] Executed DbCommand (108ms) [Parameters=[], CommandType='"Text"', CommandTimeout='60']
+CREATE DATABASE [mgsplus_db];
+2026-04-16 02:27:47.799 [INF] Executed DbCommand (52ms) [Parameters=[], CommandType='"Text"', CommandTimeout='60']
+IF SERVERPROPERTY('EngineEdition') <> 5
+BEGIN
+    ALTER DATABASE [mgsplus_db] SET READ_COMMITTED_SNAPSHOT ON;
+END;
+2026-04-16 02:27:47.812 [INF] Executed DbCommand (3ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT 1
+2026-04-16 02:27:47.814 [INF] Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+2026-04-16 02:27:47.823 [INF] Executed DbCommand (9ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+DECLARE @result int;
+EXEC @result = sp_getapplock @Resource = '__EFMigrationsLock', @LockOwner = 'Session', @LockMode = 'Exclusive';
+SELECT @result
+2026-04-16 02:27:47.843 [INF] Executed DbCommand (4ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+IF OBJECT_ID(N'[__EFMigrationsHistory]') IS NULL
+BEGIN
+    CREATE TABLE [__EFMigrationsHistory] (
+        [MigrationId] nvarchar(150) NOT NULL,
+        [ProductVersion] nvarchar(32) NOT NULL,
+        CONSTRAINT [PK___EFMigrationsHistory] PRIMARY KEY ([MigrationId])
+    );
+END;
+2026-04-16 02:27:47.847 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT 1
+2026-04-16 02:27:47.848 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT OBJECT_ID(N'[__EFMigrationsHistory]');
+2026-04-16 02:27:47.862 [INF] Executed DbCommand (14ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT [MigrationId], [ProductVersion]
+FROM [__EFMigrationsHistory]
+ORDER BY [MigrationId];
+2026-04-16 02:27:47.866 [INF] Applying migration '20260415172753_AddDoctorApplicationAndAdminSeed'.
+2026-04-16 02:27:47.892 [INF] Executed DbCommand (2ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE TABLE [BlogCategories] (
+    [Id] int NOT NULL IDENTITY,
+    [Name] nvarchar(100) NOT NULL,
+    [Slug] nvarchar(120) NOT NULL,
+    [Description] nvarchar(300) NULL,
+    [CreatedAt] datetime2 NOT NULL,
+    CONSTRAINT [PK_BlogCategories] PRIMARY KEY ([Id])
+);
+2026-04-16 02:27:47.893 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE TABLE [NewsCategories] (
+    [Id] int NOT NULL IDENTITY,
+    [Name] nvarchar(100) NOT NULL,
+    [Slug] nvarchar(120) NOT NULL,
+    [CreatedAt] datetime2 NOT NULL,
+    CONSTRAINT [PK_NewsCategories] PRIMARY KEY ([Id])
+);
+2026-04-16 02:27:47.895 [INF] Executed DbCommand (2ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE TABLE [Users] (
+    [Id] int NOT NULL IDENTITY,
+    [Email] nvarchar(256) NOT NULL,
+    [PasswordHash] nvarchar(max) NOT NULL,
+    [FirstName] nvarchar(100) NOT NULL,
+    [LastName] nvarchar(100) NOT NULL,
+    [PhoneNumber] nvarchar(20) NULL,
+    [DateOfBirth] datetime2 NULL,
+    [Role] nvarchar(20) NOT NULL DEFAULT N'Patient',
+    [IsActive] bit NOT NULL,
+    [IsEmailVerified] bit NOT NULL,
+    [CreatedAt] datetime2 NOT NULL,
+    [UpdatedAt] datetime2 NOT NULL,
+    CONSTRAINT [PK_Users] PRIMARY KEY ([Id])
+);
+2026-04-16 02:27:47.897 [INF] Executed DbCommand (2ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE TABLE [News] (
+    [Id] int NOT NULL IDENTITY,
+    [CategoryId] int NULL,
+    [Title] nvarchar(300) NOT NULL,
+    [Summary] nvarchar(600) NULL,
+    [Content] nvarchar(max) NOT NULL,
+    [ImageUrl] nvarchar(512) NULL,
+    [Source] nvarchar(200) NULL,
+    [SourceUrl] nvarchar(512) NULL,
+    [Tags] nvarchar(500) NULL,
+    [IsPublished] bit NOT NULL,
+    [ViewCount] int NOT NULL,
+    [PublishedAt] datetime2 NULL,
+    [CreatedAt] datetime2 NOT NULL,
+    [UpdatedAt] datetime2 NULL,
+    CONSTRAINT [PK_News] PRIMARY KEY ([Id]),
+    CONSTRAINT [FK_News_NewsCategories_CategoryId] FOREIGN KEY ([CategoryId]) REFERENCES [NewsCategories] ([Id]) ON DELETE SET NULL
+);
+2026-04-16 02:27:47.899 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE TABLE [BlogPosts] (
+    [Id] int NOT NULL IDENTITY,
+    [AuthorId] int NOT NULL,
+    [CategoryId] int NULL,
+    [Title] nvarchar(300) NOT NULL,
+    [Slug] nvarchar(400) NOT NULL,
+    [Summary] nvarchar(600) NULL,
+    [Content] nvarchar(max) NOT NULL,
+    [ThumbnailUrl] nvarchar(512) NULL,
+    [Tags] nvarchar(500) NULL,
+    [IsPublished] bit NOT NULL,
+    [ViewCount] int NOT NULL,
+    [PublishedAt] datetime2 NULL,
+    [CreatedAt] datetime2 NOT NULL,
+    [UpdatedAt] datetime2 NOT NULL,
+    CONSTRAINT [PK_BlogPosts] PRIMARY KEY ([Id]),
+    CONSTRAINT [FK_BlogPosts_BlogCategories_CategoryId] FOREIGN KEY ([CategoryId]) REFERENCES [BlogCategories] ([Id]) ON DELETE SET NULL,
+    CONSTRAINT [FK_BlogPosts_Users_AuthorId] FOREIGN KEY ([AuthorId]) REFERENCES [Users] ([Id]) ON DELETE NO ACTION
+);
+2026-04-16 02:27:47.900 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE TABLE [ChatSessions] (
+    [Id] int NOT NULL IDENTITY,
+    [UserId] int NULL,
+    [Title] nvarchar(100) NULL,
+    [SessionType] nvarchar(30) NOT NULL,
+    [CreatedAt] datetime2 NOT NULL,
+    [UpdatedAt] datetime2 NOT NULL,
+    CONSTRAINT [PK_ChatSessions] PRIMARY KEY ([Id]),
+    CONSTRAINT [FK_ChatSessions_Users_UserId] FOREIGN KEY ([UserId]) REFERENCES [Users] ([Id]) ON DELETE SET NULL
+);
+2026-04-16 02:27:47.901 [INF] Executed DbCommand (2ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE TABLE [Doctors] (
+    [Id] int NOT NULL IDENTITY,
+    [UserId] int NOT NULL,
+    [Specialty] nvarchar(100) NOT NULL,
+    [LicenseNumber] nvarchar(50) NOT NULL,
+    [Bio] nvarchar(2000) NULL,
+    [ConsultationFee] decimal(18,2) NOT NULL,
+    [ClinicAddress] nvarchar(200) NULL,
+    [Rating] float NOT NULL,
+    [ReviewCount] int NOT NULL,
+    [IsAvailable] bit NOT NULL,
+    [ApplicationStatus] nvarchar(20) NOT NULL DEFAULT N'Pending',
+    [RejectionReason] nvarchar(1000) NULL,
+    [ReviewedAt] datetime2 NULL,
+    [ReviewedByUserId] int NULL,
+    [CreatedAt] datetime2 NOT NULL,
+    CONSTRAINT [PK_Doctors] PRIMARY KEY ([Id]),
+    CONSTRAINT [FK_Doctors_Users_ReviewedByUserId] FOREIGN KEY ([ReviewedByUserId]) REFERENCES [Users] ([Id]) ON DELETE SET NULL,
+    CONSTRAINT [FK_Doctors_Users_UserId] FOREIGN KEY ([UserId]) REFERENCES [Users] ([Id]) ON DELETE NO ACTION
+);
+2026-04-16 02:27:47.902 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE TABLE [RefreshTokens] (
+    [Id] int NOT NULL IDENTITY,
+    [Token] nvarchar(256) NOT NULL,
+    [UserId] int NOT NULL,
+    [ExpiresAt] datetime2 NOT NULL,
+    [IsRevoked] bit NOT NULL,
+    [CreatedAt] datetime2 NOT NULL,
+    CONSTRAINT [PK_RefreshTokens] PRIMARY KEY ([Id]),
+    CONSTRAINT [FK_RefreshTokens_Users_UserId] FOREIGN KEY ([UserId]) REFERENCES [Users] ([Id]) ON DELETE CASCADE
+);
+2026-04-16 02:27:47.904 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE TABLE [UserProfiles] (
+    [Id] int NOT NULL IDENTITY,
+    [UserId] int NOT NULL,
+    [AvatarUrl] nvarchar(512) NULL,
+    [Address] nvarchar(500) NULL,
+    [InsuranceNumber] nvarchar(50) NULL,
+    [InsuranceProvider] nvarchar(100) NULL,
+    [InsuranceStartDate] datetime2 NULL,
+    [InsuranceEndDate] datetime2 NULL,
+    [BloodType] nvarchar(10) NULL,
+    [Allergies] nvarchar(500) NULL,
+    [ChronicDiseases] nvarchar(1000) NULL,
+    [CreatedAt] datetime2 NOT NULL,
+    [UpdatedAt] datetime2 NOT NULL,
+    CONSTRAINT [PK_UserProfiles] PRIMARY KEY ([Id]),
+    CONSTRAINT [FK_UserProfiles_Users_UserId] FOREIGN KEY ([UserId]) REFERENCES [Users] ([Id]) ON DELETE CASCADE
+);
+2026-04-16 02:27:47.905 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE TABLE [ChatMessages] (
+    [Id] int NOT NULL IDENTITY,
+    [SessionId] int NOT NULL,
+    [Role] nvarchar(20) NOT NULL,
+    [Content] nvarchar(max) NOT NULL,
+    [Model] nvarchar(50) NULL,
+    [TokensUsed] int NULL,
+    [CreatedAt] datetime2 NOT NULL,
+    CONSTRAINT [PK_ChatMessages] PRIMARY KEY ([Id]),
+    CONSTRAINT [FK_ChatMessages_ChatSessions_SessionId] FOREIGN KEY ([SessionId]) REFERENCES [ChatSessions] ([Id]) ON DELETE CASCADE
+);
+2026-04-16 02:27:47.906 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE TABLE [Appointments] (
+    [Id] int NOT NULL IDENTITY,
+    [UserId] int NOT NULL,
+    [DoctorId] int NULL,
+    [ScheduledAt] datetime2 NOT NULL,
+    [Status] nvarchar(30) NOT NULL,
+    [Description] nvarchar(500) NULL,
+    [Notes] nvarchar(1000) NULL,
+    [Department] nvarchar(100) NULL,
+    [QueueNumber] int NULL,
+    [CreatedAt] datetime2 NOT NULL,
+    [UpdatedAt] datetime2 NOT NULL,
+    CONSTRAINT [PK_Appointments] PRIMARY KEY ([Id]),
+    CONSTRAINT [FK_Appointments_Doctors_DoctorId] FOREIGN KEY ([DoctorId]) REFERENCES [Doctors] ([Id]) ON DELETE SET NULL,
+    CONSTRAINT [FK_Appointments_Users_UserId] FOREIGN KEY ([UserId]) REFERENCES [Users] ([Id]) ON DELETE NO ACTION
+);
+2026-04-16 02:27:47.907 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE TABLE [DoctorSchedules] (
+    [Id] int NOT NULL IDENTITY,
+    [DoctorId] int NOT NULL,
+    [DayOfWeek] int NOT NULL,
+    [StartTime] time NOT NULL,
+    [EndTime] time NOT NULL,
+    [IsAvailable] bit NOT NULL,
+    CONSTRAINT [PK_DoctorSchedules] PRIMARY KEY ([Id]),
+    CONSTRAINT [FK_DoctorSchedules_Doctors_DoctorId] FOREIGN KEY ([DoctorId]) REFERENCES [Doctors] ([Id]) ON DELETE CASCADE
+);
+2026-04-16 02:27:47.908 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE TABLE [MedicalRecords] (
+    [Id] int NOT NULL IDENTITY,
+    [UserId] int NOT NULL,
+    [DoctorId] int NULL,
+    [AppointmentId] int NULL,
+    [Diagnosis] nvarchar(500) NULL,
+    [Prescription] nvarchar(2000) NULL,
+    [Notes] nvarchar(2000) NULL,
+    [LabResults] nvarchar(2000) NULL,
+    [AttachmentUrl] nvarchar(512) NULL,
+    [RecordDate] datetime2 NOT NULL,
+    [CreatedAt] datetime2 NOT NULL,
+    CONSTRAINT [PK_MedicalRecords] PRIMARY KEY ([Id]),
+    CONSTRAINT [FK_MedicalRecords_Doctors_DoctorId] FOREIGN KEY ([DoctorId]) REFERENCES [Doctors] ([Id]) ON DELETE SET NULL,
+    CONSTRAINT [FK_MedicalRecords_Users_UserId] FOREIGN KEY ([UserId]) REFERENCES [Users] ([Id]) ON DELETE NO ACTION
+);
+2026-04-16 02:27:47.966 [INF] Executed DbCommand (57ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+IF EXISTS (SELECT * FROM [sys].[identity_columns] WHERE [name] IN (N'Id', N'CreatedAt', N'Description', N'Name', N'Slug') AND [object_id] = OBJECT_ID(N'[BlogCategories]'))
+    SET IDENTITY_INSERT [BlogCategories] ON;
+INSERT INTO [BlogCategories] ([Id], [CreatedAt], [Description], [Name], [Slug])
+VALUES (1, '2024-01-01T00:00:00.0000000', NULL, N'Sức khỏe tổng quát', N'suc-khoe-tong-quat'),
+(2, '2024-01-01T00:00:00.0000000', NULL, N'Dinh dưỡng', N'dinh-duong'),
+(3, '2024-01-01T00:00:00.0000000', NULL, N'Bảo hiểm y tế', N'bao-hiem-y-te'),
+(4, '2024-01-01T00:00:00.0000000', NULL, N'Pháp luật y tế', N'phap-luat-y-te');
+IF EXISTS (SELECT * FROM [sys].[identity_columns] WHERE [name] IN (N'Id', N'CreatedAt', N'Description', N'Name', N'Slug') AND [object_id] = OBJECT_ID(N'[BlogCategories]'))
+    SET IDENTITY_INSERT [BlogCategories] OFF;
+2026-04-16 02:27:47.974 [INF] Executed DbCommand (8ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+IF EXISTS (SELECT * FROM [sys].[identity_columns] WHERE [name] IN (N'Id', N'CreatedAt', N'Name', N'Slug') AND [object_id] = OBJECT_ID(N'[NewsCategories]'))
+    SET IDENTITY_INSERT [NewsCategories] ON;
+INSERT INTO [NewsCategories] ([Id], [CreatedAt], [Name], [Slug])
+VALUES (1, '2024-01-01T00:00:00.0000000', N'Tin tức y tế', N'tin-tuc-y-te'),
+(2, '2024-01-01T00:00:00.0000000', N'Cảnh báo dịch bệnh', N'canh-bao-dich-benh'),
+(3, '2024-01-01T00:00:00.0000000', N'Chính sách y tế', N'chinh-sach-y-te');
+IF EXISTS (SELECT * FROM [sys].[identity_columns] WHERE [name] IN (N'Id', N'CreatedAt', N'Name', N'Slug') AND [object_id] = OBJECT_ID(N'[NewsCategories]'))
+    SET IDENTITY_INSERT [NewsCategories] OFF;
+2026-04-16 02:27:47.975 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE INDEX [IX_Appointments_DoctorId] ON [Appointments] ([DoctorId]);
+2026-04-16 02:27:47.975 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE INDEX [IX_Appointments_UserId] ON [Appointments] ([UserId]);
+2026-04-16 02:27:47.987 [INF] Executed DbCommand (12ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE UNIQUE INDEX [IX_BlogCategories_Slug] ON [BlogCategories] ([Slug]);
+2026-04-16 02:27:47.988 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE INDEX [IX_BlogPosts_AuthorId] ON [BlogPosts] ([AuthorId]);
+2026-04-16 02:27:47.989 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE INDEX [IX_BlogPosts_CategoryId] ON [BlogPosts] ([CategoryId]);
+2026-04-16 02:27:47.989 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE UNIQUE INDEX [IX_BlogPosts_Slug] ON [BlogPosts] ([Slug]);
+2026-04-16 02:27:47.990 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE INDEX [IX_ChatMessages_SessionId] ON [ChatMessages] ([SessionId]);
+2026-04-16 02:27:47.990 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE INDEX [IX_ChatSessions_UserId] ON [ChatSessions] ([UserId]);
+2026-04-16 02:27:47.991 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE UNIQUE INDEX [IX_Doctors_LicenseNumber] ON [Doctors] ([LicenseNumber]);
+2026-04-16 02:27:47.991 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE INDEX [IX_Doctors_ReviewedByUserId] ON [Doctors] ([ReviewedByUserId]);
+2026-04-16 02:27:47.992 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE INDEX [IX_Doctors_UserId] ON [Doctors] ([UserId]);
+2026-04-16 02:27:47.992 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE INDEX [IX_DoctorSchedules_DoctorId] ON [DoctorSchedules] ([DoctorId]);
+2026-04-16 02:27:47.993 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE INDEX [IX_MedicalRecords_DoctorId] ON [MedicalRecords] ([DoctorId]);
+2026-04-16 02:27:47.993 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE INDEX [IX_MedicalRecords_UserId] ON [MedicalRecords] ([UserId]);
+2026-04-16 02:27:47.994 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE INDEX [IX_News_CategoryId] ON [News] ([CategoryId]);
+2026-04-16 02:27:47.995 [INF] Executed DbCommand (2ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE UNIQUE INDEX [IX_NewsCategories_Slug] ON [NewsCategories] ([Slug]);
+2026-04-16 02:27:47.996 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE UNIQUE INDEX [IX_RefreshTokens_Token] ON [RefreshTokens] ([Token]);
+2026-04-16 02:27:47.996 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE INDEX [IX_RefreshTokens_UserId] ON [RefreshTokens] ([UserId]);
+2026-04-16 02:27:47.997 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE UNIQUE INDEX [IX_UserProfiles_UserId] ON [UserProfiles] ([UserId]);
+2026-04-16 02:27:47.998 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE UNIQUE INDEX [IX_Users_Email] ON [Users] ([Email]);
+2026-04-16 02:27:47.999 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+VALUES (N'20260415172753_AddDoctorApplicationAndAdminSeed', N'9.0.0');
+2026-04-16 02:27:48.003 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+DECLARE @result int;
+EXEC @result = sp_releaseapplock @Resource = '__EFMigrationsLock', @LockOwner = 'Session';
+SELECT @result
+2026-04-16 02:27:48.085 [INF] Executed DbCommand (4ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT CASE
+    WHEN EXISTS (
+        SELECT 1
+        FROM [Users] AS [u]
+        WHERE [u].[Role] = N'Admin') THEN CAST(1 AS bit)
+    ELSE CAST(0 AS bit)
+END
+2026-04-16 02:27:48.293 [INF] Executed DbCommand (21ms) [Parameters=[@p0='?' (DbType = DateTime2), @p1='?' (DbType = DateTime2), @p2='?' (Size = 256), @p3='?' (Size = 100), @p4='?' (DbType = Boolean), @p5='?' (DbType = Boolean), @p6='?' (Size = 100), @p7='?' (Size = 4000), @p8='?' (Size = 20), @p9='?' (Size = 20), @p10='?' (DbType = DateTime2)], CommandType='"Text"', CommandTimeout='30']
+SET IMPLICIT_TRANSACTIONS OFF;
+SET NOCOUNT ON;
+INSERT INTO [Users] ([CreatedAt], [DateOfBirth], [Email], [FirstName], [IsActive], [IsEmailVerified], [LastName], [PasswordHash], [PhoneNumber], [Role], [UpdatedAt])
+OUTPUT INSERTED.[Id]
+VALUES (@p0, @p1, @p2, @p3, @p4, @p5, @p6, @p7, @p8, @p9, @p10);
+2026-04-16 02:27:48.298 [INF] Admin account created: admin@mgsplus.vn
+2026-04-16 02:27:48.341 [INF] Now listening on: http://localhost:5001
+2026-04-16 02:27:48.341 [INF] Application started. Press Ctrl+C to shut down.
+2026-04-16 02:27:48.341 [INF] Hosting environment: Development
+2026-04-16 02:27:48.341 [INF] Content root path: /Users/dinhtanloc/Projects/MGSPlus/src/backend
+2026-04-16 02:27:56.119 [INF] HTTP GET /health responded 200 in 29.2765 ms
+2026-04-16 02:28:04.314 [INF] Executed DbCommand (21ms) [Parameters=[@__req_Email_0='?' (Size = 256)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [u].[Id], [u].[CreatedAt], [u].[DateOfBirth], [u].[Email], [u].[FirstName], [u].[IsActive], [u].[IsEmailVerified], [u].[LastName], [u].[PasswordHash], [u].[PhoneNumber], [u].[Role], [u].[UpdatedAt]
+FROM [Users] AS [u]
+WHERE [u].[Email] = @__req_Email_0
+2026-04-16 02:28:04.445 [INF] Executed DbCommand (15ms) [Parameters=[@p0='?' (DbType = DateTime2), @p1='?' (DbType = DateTime2), @p2='?' (DbType = Boolean), @p3='?' (Size = 256), @p4='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SET IMPLICIT_TRANSACTIONS OFF;
+SET NOCOUNT ON;
+INSERT INTO [RefreshTokens] ([CreatedAt], [ExpiresAt], [IsRevoked], [Token], [UserId])
+OUTPUT INSERTED.[Id]
+VALUES (@p0, @p1, @p2, @p3, @p4);
+2026-04-16 02:28:04.451 [INF] HTTP POST /api/auth/login responded 200 in 190.7961 ms
+2026-04-16 02:28:22.115 [INF] Executed DbCommand (4ms) [Parameters=[@__req_Email_0='?' (Size = 256)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [u].[Id], [u].[CreatedAt], [u].[DateOfBirth], [u].[Email], [u].[FirstName], [u].[IsActive], [u].[IsEmailVerified], [u].[LastName], [u].[PasswordHash], [u].[PhoneNumber], [u].[Role], [u].[UpdatedAt]
+FROM [Users] AS [u]
+WHERE [u].[Email] = @__req_Email_0
+2026-04-16 02:28:22.221 [INF] Executed DbCommand (8ms) [Parameters=[@p0='?' (DbType = DateTime2), @p1='?' (DbType = DateTime2), @p2='?' (DbType = Boolean), @p3='?' (Size = 256), @p4='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SET IMPLICIT_TRANSACTIONS OFF;
+SET NOCOUNT ON;
+INSERT INTO [RefreshTokens] ([CreatedAt], [ExpiresAt], [IsRevoked], [Token], [UserId])
+OUTPUT INSERTED.[Id]
+VALUES (@p0, @p1, @p2, @p3, @p4);
+2026-04-16 02:28:22.222 [INF] HTTP POST /api/auth/login responded 200 in 125.0805 ms
+2026-04-16 02:28:28.336 [INF] Executed DbCommand (3ms) [Parameters=[@__req_Email_0='?' (Size = 256)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [u].[Id], [u].[CreatedAt], [u].[DateOfBirth], [u].[Email], [u].[FirstName], [u].[IsActive], [u].[IsEmailVerified], [u].[LastName], [u].[PasswordHash], [u].[PhoneNumber], [u].[Role], [u].[UpdatedAt]
+FROM [Users] AS [u]
+WHERE [u].[Email] = @__req_Email_0
+2026-04-16 02:28:28.441 [INF] Executed DbCommand (3ms) [Parameters=[@p0='?' (DbType = DateTime2), @p1='?' (DbType = DateTime2), @p2='?' (DbType = Boolean), @p3='?' (Size = 256), @p4='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SET IMPLICIT_TRANSACTIONS OFF;
+SET NOCOUNT ON;
+INSERT INTO [RefreshTokens] ([CreatedAt], [ExpiresAt], [IsRevoked], [Token], [UserId])
+OUTPUT INSERTED.[Id]
+VALUES (@p0, @p1, @p2, @p3, @p4);
+2026-04-16 02:28:28.441 [INF] HTTP POST /api/auth/login responded 200 in 108.9508 ms
+2026-04-16 02:28:28.479 [INF] Executed DbCommand (8ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [Users] AS [u]
+2026-04-16 02:28:28.490 [INF] Executed DbCommand (10ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [Users] AS [u]
+WHERE [u].[Role] = N'Doctor'
+2026-04-16 02:28:28.493 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [Users] AS [u]
+WHERE [u].[Role] = N'Patient'
+2026-04-16 02:28:28.497 [INF] Executed DbCommand (3ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [Doctors] AS [d]
+WHERE [d].[ApplicationStatus] = N'Pending'
+2026-04-16 02:28:28.499 [INF] Executed DbCommand (2ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [Appointments] AS [a]
+2026-04-16 02:28:28.502 [INF] Executed DbCommand (2ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [BlogPosts] AS [b]
+2026-04-16 02:28:28.504 [INF] Executed DbCommand (2ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [News] AS [n]
+2026-04-16 02:28:28.511 [INF] Executed DbCommand (5ms) [Parameters=[@__now_Year_0='?' (DbType = Int32), @__now_Month_1='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [Appointments] AS [a]
+WHERE DATEPART(year, [a].[CreatedAt]) = @__now_Year_0 AND DATEPART(month, [a].[CreatedAt]) = @__now_Month_1
+2026-04-16 02:28:28.524 [ERR] An unhandled exception has occurred while executing the request.
+System.InvalidOperationException: The LINQ expression 'DbSet<Appointment>()
+    .Where(a => a.CreatedAt >= __AddMonths_0)
+    .GroupBy(a => new { 
+        Year = a.CreatedAt.Year, 
+        Month = a.CreatedAt.Month
+     })
+    .Select(g => new MonthlyStatDto(
+        g.Key.Year, 
+        g.Key.Month, 
+        g
+            .AsQueryable()
+            .Count()
+    ))
+    .OrderBy(e0 => e0.Year)' could not be translated. Either rewrite the query in a form that can be translated, or switch to client evaluation explicitly by inserting a call to 'AsEnumerable', 'AsAsyncEnumerable', 'ToList', or 'ToListAsync'. See https://go.microsoft.com/fwlink/?linkid=2101038 for more information.
+   at Microsoft.EntityFrameworkCore.Query.QueryableMethodTranslatingExpressionVisitor.Translate(Expression expression)
+   at Microsoft.EntityFrameworkCore.Query.QueryCompilationContext.CreateQueryExecutorExpression[TResult](Expression query)
+   at Microsoft.EntityFrameworkCore.Query.QueryCompilationContext.CreateQueryExecutor[TResult](Expression query)
+   at Microsoft.EntityFrameworkCore.Storage.Database.CompileQuery[TResult](Expression query, Boolean async)
+   at Microsoft.EntityFrameworkCore.Query.Internal.QueryCompiler.CompileQueryCore[TResult](IDatabase database, Expression query, IModel model, Boolean async)
+   at Microsoft.EntityFrameworkCore.Query.Internal.QueryCompiler.<>c__DisplayClass11_0`1.<ExecuteCore>b__0()
+   at Microsoft.EntityFrameworkCore.Query.Internal.CompiledQueryCache.GetOrAddQuery[TResult](Object cacheKey, Func`1 compiler)
+   at Microsoft.EntityFrameworkCore.Query.Internal.QueryCompiler.ExecuteCore[TResult](Expression query, Boolean async, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.QueryCompiler.ExecuteAsync[TResult](Expression query, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.EntityQueryProvider.ExecuteAsync[TResult](Expression expression, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.EntityQueryable`1.GetAsyncEnumerator(CancellationToken cancellationToken)
+   at System.Runtime.CompilerServices.ConfiguredCancelableAsyncEnumerable`1.GetAsyncEnumerator()
+   at Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync[TSource](IQueryable`1 source, CancellationToken cancellationToken)
+   at MGSPlus.Api.Controllers.AdminController.GetStats() in /Users/dinhtanloc/Projects/MGSPlus/src/backend/Controllers/AdminController.cs:line 32
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ActionMethodExecutor.TaskOfIActionResultExecutor.Execute(ActionContext actionContext, IActionResultTypeMapper mapper, ObjectMethodExecutor executor, Object controller, Object[] arguments)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.<InvokeActionMethodAsync>g__Awaited|12_0(ControllerActionInvoker invoker, ValueTask`1 actionResultValueTask)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.<InvokeNextActionFilterAsync>g__Awaited|10_0(ControllerActionInvoker invoker, Task lastTask, State next, Scope scope, Object state, Boolean isCompleted)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.Rethrow(ActionExecutedContextSealed context)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.Next(State& next, Scope& scope, Object& state, Boolean& isCompleted)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.<InvokeInnerFilterAsync>g__Awaited|13_0(ControllerActionInvoker invoker, Task lastTask, State next, Scope scope, Object state, Boolean isCompleted)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeFilterPipelineAsync>g__Awaited|20_0(ResourceInvoker invoker, Task lastTask, State next, Scope scope, Object state, Boolean isCompleted)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeAsync>g__Awaited|17_0(ResourceInvoker invoker, Task task, IDisposable scope)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeAsync>g__Awaited|17_0(ResourceInvoker invoker, Task task, IDisposable scope)
+   at Prometheus.HttpMetrics.HttpRequestDurationMiddleware.Invoke(HttpContext context)
+   at Prometheus.HttpMetrics.HttpRequestCountMiddleware.Invoke(HttpContext context)
+   at Prometheus.HttpMetrics.HttpInProgressMiddleware.Invoke(HttpContext context)
+   at Microsoft.AspNetCore.Authorization.AuthorizationMiddleware.Invoke(HttpContext context)
+   at Microsoft.AspNetCore.Authentication.AuthenticationMiddleware.Invoke(HttpContext context)
+   at Swashbuckle.AspNetCore.SwaggerUI.SwaggerUIMiddleware.Invoke(HttpContext httpContext)
+   at Swashbuckle.AspNetCore.Swagger.SwaggerMiddleware.Invoke(HttpContext httpContext, ISwaggerProvider swaggerProvider)
+   at Microsoft.AspNetCore.Diagnostics.StatusCodePagesMiddleware.Invoke(HttpContext context)
+   at Microsoft.AspNetCore.Diagnostics.ExceptionHandlerMiddlewareImpl.<Invoke>g__Awaited|10_0(ExceptionHandlerMiddlewareImpl middleware, HttpContext context, Task task)
+2026-04-16 02:28:28.528 [ERR] Unhandled exception on GET /api/admin/stats
+System.InvalidOperationException: The LINQ expression 'DbSet<Appointment>()
+    .Where(a => a.CreatedAt >= __AddMonths_0)
+    .GroupBy(a => new { 
+        Year = a.CreatedAt.Year, 
+        Month = a.CreatedAt.Month
+     })
+    .Select(g => new MonthlyStatDto(
+        g.Key.Year, 
+        g.Key.Month, 
+        g
+            .AsQueryable()
+            .Count()
+    ))
+    .OrderBy(e0 => e0.Year)' could not be translated. Either rewrite the query in a form that can be translated, or switch to client evaluation explicitly by inserting a call to 'AsEnumerable', 'AsAsyncEnumerable', 'ToList', or 'ToListAsync'. See https://go.microsoft.com/fwlink/?linkid=2101038 for more information.
+   at Microsoft.EntityFrameworkCore.Query.QueryableMethodTranslatingExpressionVisitor.Translate(Expression expression)
+   at Microsoft.EntityFrameworkCore.Query.QueryCompilationContext.CreateQueryExecutorExpression[TResult](Expression query)
+   at Microsoft.EntityFrameworkCore.Query.QueryCompilationContext.CreateQueryExecutor[TResult](Expression query)
+   at Microsoft.EntityFrameworkCore.Storage.Database.CompileQuery[TResult](Expression query, Boolean async)
+   at Microsoft.EntityFrameworkCore.Query.Internal.QueryCompiler.CompileQueryCore[TResult](IDatabase database, Expression query, IModel model, Boolean async)
+   at Microsoft.EntityFrameworkCore.Query.Internal.QueryCompiler.<>c__DisplayClass11_0`1.<ExecuteCore>b__0()
+   at Microsoft.EntityFrameworkCore.Query.Internal.CompiledQueryCache.GetOrAddQuery[TResult](Object cacheKey, Func`1 compiler)
+   at Microsoft.EntityFrameworkCore.Query.Internal.QueryCompiler.ExecuteCore[TResult](Expression query, Boolean async, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.QueryCompiler.ExecuteAsync[TResult](Expression query, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.EntityQueryProvider.ExecuteAsync[TResult](Expression expression, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.EntityQueryable`1.GetAsyncEnumerator(CancellationToken cancellationToken)
+   at System.Runtime.CompilerServices.ConfiguredCancelableAsyncEnumerable`1.GetAsyncEnumerator()
+   at Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync[TSource](IQueryable`1 source, CancellationToken cancellationToken)
+   at MGSPlus.Api.Controllers.AdminController.GetStats() in /Users/dinhtanloc/Projects/MGSPlus/src/backend/Controllers/AdminController.cs:line 32
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ActionMethodExecutor.TaskOfIActionResultExecutor.Execute(ActionContext actionContext, IActionResultTypeMapper mapper, ObjectMethodExecutor executor, Object controller, Object[] arguments)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.<InvokeActionMethodAsync>g__Awaited|12_0(ControllerActionInvoker invoker, ValueTask`1 actionResultValueTask)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.<InvokeNextActionFilterAsync>g__Awaited|10_0(ControllerActionInvoker invoker, Task lastTask, State next, Scope scope, Object state, Boolean isCompleted)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.Rethrow(ActionExecutedContextSealed context)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.Next(State& next, Scope& scope, Object& state, Boolean& isCompleted)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.<InvokeInnerFilterAsync>g__Awaited|13_0(ControllerActionInvoker invoker, Task lastTask, State next, Scope scope, Object state, Boolean isCompleted)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeFilterPipelineAsync>g__Awaited|20_0(ResourceInvoker invoker, Task lastTask, State next, Scope scope, Object state, Boolean isCompleted)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeAsync>g__Awaited|17_0(ResourceInvoker invoker, Task task, IDisposable scope)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeAsync>g__Awaited|17_0(ResourceInvoker invoker, Task task, IDisposable scope)
+   at Prometheus.HttpMetrics.HttpRequestDurationMiddleware.Invoke(HttpContext context)
+   at Prometheus.HttpMetrics.HttpRequestCountMiddleware.Invoke(HttpContext context)
+   at Prometheus.HttpMetrics.HttpInProgressMiddleware.Invoke(HttpContext context)
+   at Microsoft.AspNetCore.Authorization.AuthorizationMiddleware.Invoke(HttpContext context)
+   at Microsoft.AspNetCore.Authentication.AuthenticationMiddleware.Invoke(HttpContext context)
+   at Swashbuckle.AspNetCore.SwaggerUI.SwaggerUIMiddleware.Invoke(HttpContext httpContext)
+   at Swashbuckle.AspNetCore.Swagger.SwaggerMiddleware.Invoke(HttpContext httpContext, ISwaggerProvider swaggerProvider)
+   at Microsoft.AspNetCore.Diagnostics.StatusCodePagesMiddleware.Invoke(HttpContext context)
+   at Microsoft.AspNetCore.Diagnostics.ExceptionHandlerMiddlewareImpl.<Invoke>g__Awaited|10_0(ExceptionHandlerMiddlewareImpl middleware, HttpContext context, Task task)
+2026-04-16 02:28:28.531 [INF] HTTP GET /api/admin/stats responded 400 in 81.0003 ms
+2026-04-16 02:28:44.408 [INF] Application is shutting down...
+2026-04-16 02:28:47.890 [INF] Executed DbCommand (6ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT 1
+2026-04-16 02:28:47.901 [INF] Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+2026-04-16 02:28:47.908 [INF] Executed DbCommand (6ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+DECLARE @result int;
+EXEC @result = sp_getapplock @Resource = '__EFMigrationsLock', @LockOwner = 'Session', @LockMode = 'Exclusive';
+SELECT @result
+2026-04-16 02:28:47.925 [INF] Executed DbCommand (3ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+IF OBJECT_ID(N'[__EFMigrationsHistory]') IS NULL
+BEGIN
+    CREATE TABLE [__EFMigrationsHistory] (
+        [MigrationId] nvarchar(150) NOT NULL,
+        [ProductVersion] nvarchar(32) NOT NULL,
+        CONSTRAINT [PK___EFMigrationsHistory] PRIMARY KEY ([MigrationId])
+    );
+END;
+2026-04-16 02:28:47.929 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT 1
+2026-04-16 02:28:47.930 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT OBJECT_ID(N'[__EFMigrationsHistory]');
+2026-04-16 02:28:47.934 [INF] Executed DbCommand (3ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT [MigrationId], [ProductVersion]
+FROM [__EFMigrationsHistory]
+ORDER BY [MigrationId];
+2026-04-16 02:28:47.936 [INF] No migrations were applied. The database is already up to date.
+2026-04-16 02:28:47.939 [INF] Executed DbCommand (2ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+DECLARE @result int;
+EXEC @result = sp_releaseapplock @Resource = '__EFMigrationsLock', @LockOwner = 'Session';
+SELECT @result
+2026-04-16 02:28:48.012 [INF] Executed DbCommand (10ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT CASE
+    WHEN EXISTS (
+        SELECT 1
+        FROM [Users] AS [u]
+        WHERE [u].[Role] = N'Admin') THEN CAST(1 AS bit)
+    ELSE CAST(0 AS bit)
+END
+2026-04-16 02:28:48.055 [INF] Now listening on: http://localhost:5001
+2026-04-16 02:28:48.055 [INF] Application started. Press Ctrl+C to shut down.
+2026-04-16 02:28:48.055 [INF] Hosting environment: Development
+2026-04-16 02:28:48.055 [INF] Content root path: /Users/dinhtanloc/Projects/MGSPlus/src/backend
+2026-04-16 02:29:03.595 [INF] Executed DbCommand (10ms) [Parameters=[@__req_Email_0='?' (Size = 256)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [u].[Id], [u].[CreatedAt], [u].[DateOfBirth], [u].[Email], [u].[FirstName], [u].[IsActive], [u].[IsEmailVerified], [u].[LastName], [u].[PasswordHash], [u].[PhoneNumber], [u].[Role], [u].[UpdatedAt]
+FROM [Users] AS [u]
+WHERE [u].[Email] = @__req_Email_0
+2026-04-16 02:29:03.821 [INF] Executed DbCommand (8ms) [Parameters=[@p0='?' (DbType = DateTime2), @p1='?' (DbType = DateTime2), @p2='?' (DbType = Boolean), @p3='?' (Size = 256), @p4='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SET IMPLICIT_TRANSACTIONS OFF;
+SET NOCOUNT ON;
+INSERT INTO [RefreshTokens] ([CreatedAt], [ExpiresAt], [IsRevoked], [Token], [UserId])
+OUTPUT INSERTED.[Id]
+VALUES (@p0, @p1, @p2, @p3, @p4);
+2026-04-16 02:29:03.833 [INF] HTTP POST /api/auth/login responded 200 in 289.9640 ms
+2026-04-16 02:29:03.880 [INF] Executed DbCommand (2ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [Users] AS [u]
+2026-04-16 02:29:03.884 [INF] Executed DbCommand (2ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [Users] AS [u]
+WHERE [u].[Role] = N'Doctor'
+2026-04-16 02:29:03.886 [INF] Executed DbCommand (2ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [Users] AS [u]
+WHERE [u].[Role] = N'Patient'
+2026-04-16 02:29:03.889 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [Doctors] AS [d]
+WHERE [d].[ApplicationStatus] = N'Pending'
+2026-04-16 02:29:03.891 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [Appointments] AS [a]
+2026-04-16 02:29:03.893 [INF] Executed DbCommand (2ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [BlogPosts] AS [b]
+2026-04-16 02:29:03.895 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [News] AS [n]
+2026-04-16 02:29:03.899 [INF] Executed DbCommand (2ms) [Parameters=[@__now_Year_0='?' (DbType = Int32), @__now_Month_1='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [Appointments] AS [a]
+WHERE DATEPART(year, [a].[CreatedAt]) = @__now_Year_0 AND DATEPART(month, [a].[CreatedAt]) = @__now_Month_1
+2026-04-16 02:29:03.925 [INF] Executed DbCommand (16ms) [Parameters=[@__AddMonths_0='?' (DbType = DateTime2)], CommandType='"Text"', CommandTimeout='30']
+SELECT [a0].[Year], [a0].[Month], COUNT(*) AS [Count]
+FROM (
+    SELECT DATEPART(year, [a].[CreatedAt]) AS [Year], DATEPART(month, [a].[CreatedAt]) AS [Month]
+    FROM [Appointments] AS [a]
+    WHERE [a].[CreatedAt] >= @__AddMonths_0
+) AS [a0]
+GROUP BY [a0].[Year], [a0].[Month]
+ORDER BY [a0].[Year], [a0].[Month]
+2026-04-16 02:29:03.928 [INF] HTTP GET /api/admin/stats responded 200 in 84.3508 ms
+2026-04-16 09:59:18.898 [INF] Executed DbCommand (6ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT 1
+2026-04-16 09:59:18.909 [INF] Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+2026-04-16 09:59:18.930 [INF] Executed DbCommand (21ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+DECLARE @result int;
+EXEC @result = sp_getapplock @Resource = '__EFMigrationsLock', @LockOwner = 'Session', @LockMode = 'Exclusive';
+SELECT @result
+2026-04-16 09:59:18.948 [INF] Executed DbCommand (3ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+IF OBJECT_ID(N'[__EFMigrationsHistory]') IS NULL
+BEGIN
+    CREATE TABLE [__EFMigrationsHistory] (
+        [MigrationId] nvarchar(150) NOT NULL,
+        [ProductVersion] nvarchar(32) NOT NULL,
+        CONSTRAINT [PK___EFMigrationsHistory] PRIMARY KEY ([MigrationId])
+    );
+END;
+2026-04-16 09:59:18.952 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT 1
+2026-04-16 09:59:18.953 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT OBJECT_ID(N'[__EFMigrationsHistory]');
+2026-04-16 09:59:18.963 [INF] Executed DbCommand (10ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT [MigrationId], [ProductVersion]
+FROM [__EFMigrationsHistory]
+ORDER BY [MigrationId];
+2026-04-16 09:59:18.966 [INF] Applying migration '20260416023615_AddAppointmentDoctorActionFields'.
+2026-04-16 09:59:18.978 [INF] Executed DbCommand (5ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+ALTER TABLE [Appointments] ADD [CancelReason] nvarchar(1000) NULL;
+2026-04-16 09:59:18.980 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+ALTER TABLE [Appointments] ADD [RescheduleReason] nvarchar(1000) NULL;
+2026-04-16 09:59:18.981 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+ALTER TABLE [Appointments] ADD [RescheduledTo] datetime2 NULL;
+2026-04-16 09:59:18.994 [INF] Executed DbCommand (13ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+VALUES (N'20260416023615_AddAppointmentDoctorActionFields', N'9.0.0');
+2026-04-16 09:59:18.994 [INF] Applying migration '20260416023918_AddDirectChatAndPrescription'.
+2026-04-16 09:59:19.013 [INF] Executed DbCommand (7ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE TABLE [DirectChatSessions] (
+    [Id] int NOT NULL IDENTITY,
+    [PatientId] int NOT NULL,
+    [DoctorId] int NOT NULL,
+    [Status] nvarchar(20) NOT NULL,
+    [CreatedAt] datetime2 NOT NULL,
+    [UpdatedAt] datetime2 NOT NULL,
+    CONSTRAINT [PK_DirectChatSessions] PRIMARY KEY ([Id]),
+    CONSTRAINT [FK_DirectChatSessions_Doctors_DoctorId] FOREIGN KEY ([DoctorId]) REFERENCES [Doctors] ([Id]) ON DELETE NO ACTION,
+    CONSTRAINT [FK_DirectChatSessions_Users_PatientId] FOREIGN KEY ([PatientId]) REFERENCES [Users] ([Id]) ON DELETE NO ACTION
+);
+2026-04-16 09:59:19.016 [INF] Executed DbCommand (3ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE TABLE [Prescriptions] (
+    [Id] int NOT NULL IDENTITY,
+    [UserId] int NOT NULL,
+    [OriginalFileName] nvarchar(500) NOT NULL,
+    [RawOcrText] nvarchar(max) NULL,
+    [MedicationsJson] nvarchar(max) NULL,
+    [Status] nvarchar(20) NOT NULL,
+    [ErrorMessage] nvarchar(500) NULL,
+    [CreatedAt] datetime2 NOT NULL,
+    CONSTRAINT [PK_Prescriptions] PRIMARY KEY ([Id]),
+    CONSTRAINT [FK_Prescriptions_Users_UserId] FOREIGN KEY ([UserId]) REFERENCES [Users] ([Id]) ON DELETE CASCADE
+);
+2026-04-16 09:59:19.017 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE TABLE [DirectMessages] (
+    [Id] int NOT NULL IDENTITY,
+    [SessionId] int NOT NULL,
+    [SenderId] int NOT NULL,
+    [Content] nvarchar(4000) NOT NULL,
+    [IsRead] bit NOT NULL,
+    [SentAt] datetime2 NOT NULL,
+    CONSTRAINT [PK_DirectMessages] PRIMARY KEY ([Id]),
+    CONSTRAINT [FK_DirectMessages_DirectChatSessions_SessionId] FOREIGN KEY ([SessionId]) REFERENCES [DirectChatSessions] ([Id]) ON DELETE CASCADE,
+    CONSTRAINT [FK_DirectMessages_Users_SenderId] FOREIGN KEY ([SenderId]) REFERENCES [Users] ([Id]) ON DELETE NO ACTION
+);
+2026-04-16 09:59:19.018 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE INDEX [IX_DirectChatSessions_DoctorId] ON [DirectChatSessions] ([DoctorId]);
+2026-04-16 09:59:19.019 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE UNIQUE INDEX [IX_DirectChatSessions_PatientId_DoctorId] ON [DirectChatSessions] ([PatientId], [DoctorId]);
+2026-04-16 09:59:19.020 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE INDEX [IX_DirectMessages_SenderId] ON [DirectMessages] ([SenderId]);
+2026-04-16 09:59:19.020 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE INDEX [IX_DirectMessages_SessionId] ON [DirectMessages] ([SessionId]);
+2026-04-16 09:59:19.021 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE INDEX [IX_Prescriptions_UserId] ON [Prescriptions] ([UserId]);
+2026-04-16 09:59:19.022 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+VALUES (N'20260416023918_AddDirectChatAndPrescription', N'9.0.0');
+2026-04-16 09:59:19.026 [INF] Executed DbCommand (2ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+DECLARE @result int;
+EXEC @result = sp_releaseapplock @Resource = '__EFMigrationsLock', @LockOwner = 'Session';
+SELECT @result
+2026-04-16 09:59:47.731 [INF] Executed DbCommand (6ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT 1
+2026-04-16 09:59:47.741 [INF] Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+2026-04-16 09:59:47.748 [INF] Executed DbCommand (5ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+DECLARE @result int;
+EXEC @result = sp_getapplock @Resource = '__EFMigrationsLock', @LockOwner = 'Session', @LockMode = 'Exclusive';
+SELECT @result
+2026-04-16 09:59:47.766 [INF] Executed DbCommand (3ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+IF OBJECT_ID(N'[__EFMigrationsHistory]') IS NULL
+BEGIN
+    CREATE TABLE [__EFMigrationsHistory] (
+        [MigrationId] nvarchar(150) NOT NULL,
+        [ProductVersion] nvarchar(32) NOT NULL,
+        CONSTRAINT [PK___EFMigrationsHistory] PRIMARY KEY ([MigrationId])
+    );
+END;
+2026-04-16 09:59:47.770 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT 1
+2026-04-16 09:59:47.771 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT OBJECT_ID(N'[__EFMigrationsHistory]');
+2026-04-16 09:59:47.774 [INF] Executed DbCommand (3ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT [MigrationId], [ProductVersion]
+FROM [__EFMigrationsHistory]
+ORDER BY [MigrationId];
+2026-04-16 09:59:47.777 [INF] No migrations were applied. The database is already up to date.
+2026-04-16 09:59:47.780 [INF] Executed DbCommand (2ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+DECLARE @result int;
+EXEC @result = sp_releaseapplock @Resource = '__EFMigrationsLock', @LockOwner = 'Session';
+SELECT @result
+2026-04-16 09:59:47.873 [INF] Executed DbCommand (27ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT CASE
+    WHEN EXISTS (
+        SELECT 1
+        FROM [Users] AS [u]
+        WHERE [u].[Role] = N'Admin') THEN CAST(1 AS bit)
+    ELSE CAST(0 AS bit)
+END
+2026-04-16 09:59:47.928 [INF] Now listening on: http://localhost:5001
+2026-04-16 09:59:47.928 [INF] Application started. Press Ctrl+C to shut down.
+2026-04-16 09:59:47.928 [INF] Hosting environment: Development
+2026-04-16 09:59:47.928 [INF] Content root path: /Users/dinhtanloc/Projects/MGSPlus/src/backend
+2026-04-16 09:59:54.616 [INF] HTTP GET /health responded 200 in 27.6090 ms
+2026-04-16 10:01:53.815 [INF] Executed DbCommand (18ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT [d].[Id], [d].[Specialty], [d].[Bio], [d].[ConsultationFee], [d].[Rating], [d].[ReviewCount], [u].[FirstName] + N' ' + [u].[LastName] AS [Name], [u].[Email]
+FROM [Doctors] AS [d]
+INNER JOIN [Users] AS [u] ON [d].[UserId] = [u].[Id]
+WHERE [d].[IsAvailable] = CAST(1 AS bit)
+2026-04-16 10:01:53.822 [INF] HTTP GET /api/appointments/doctors responded 200 in 61.6713 ms
+2026-04-16 10:01:57.332 [INF] Executed DbCommand (23ms) [Parameters=[@__req_Email_0='?' (Size = 256)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [u].[Id], [u].[CreatedAt], [u].[DateOfBirth], [u].[Email], [u].[FirstName], [u].[IsActive], [u].[IsEmailVerified], [u].[LastName], [u].[PasswordHash], [u].[PhoneNumber], [u].[Role], [u].[UpdatedAt]
+FROM [Users] AS [u]
+WHERE [u].[Email] = @__req_Email_0
+2026-04-16 10:01:57.563 [INF] Executed DbCommand (20ms) [Parameters=[@p0='?' (DbType = DateTime2), @p1='?' (DbType = DateTime2), @p2='?' (DbType = Boolean), @p3='?' (Size = 256), @p4='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SET IMPLICIT_TRANSACTIONS OFF;
+SET NOCOUNT ON;
+INSERT INTO [RefreshTokens] ([CreatedAt], [ExpiresAt], [IsRevoked], [Token], [UserId])
+OUTPUT INSERTED.[Id]
+VALUES (@p0, @p1, @p2, @p3, @p4);
+2026-04-16 10:01:57.571 [INF] HTTP POST /api/auth/login responded 200 in 298.9368 ms
+2026-04-16 10:02:15.036 [INF] Executed DbCommand (5ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [Users] AS [u]
+2026-04-16 10:02:15.041 [INF] Executed DbCommand (4ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [Users] AS [u]
+WHERE [u].[Role] = N'Doctor'
+2026-04-16 10:02:15.044 [INF] Executed DbCommand (2ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [Users] AS [u]
+WHERE [u].[Role] = N'Patient'
+2026-04-16 10:02:15.049 [INF] Executed DbCommand (4ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [Doctors] AS [d]
+WHERE [d].[ApplicationStatus] = N'Pending'
+2026-04-16 10:02:15.052 [INF] Executed DbCommand (2ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [Appointments] AS [a]
+2026-04-16 10:02:15.055 [INF] Executed DbCommand (3ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [BlogPosts] AS [b]
+2026-04-16 10:02:15.059 [INF] Executed DbCommand (2ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [News] AS [n]
+2026-04-16 10:02:15.064 [INF] Executed DbCommand (4ms) [Parameters=[@__now_Year_0='?' (DbType = Int32), @__now_Month_1='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [Appointments] AS [a]
+WHERE DATEPART(year, [a].[CreatedAt]) = @__now_Year_0 AND DATEPART(month, [a].[CreatedAt]) = @__now_Month_1
+2026-04-16 10:02:15.081 [INF] Executed DbCommand (7ms) [Parameters=[@__AddMonths_0='?' (DbType = DateTime2)], CommandType='"Text"', CommandTimeout='30']
+SELECT [a0].[Year], [a0].[Month], COUNT(*) AS [Count]
+FROM (
+    SELECT DATEPART(year, [a].[CreatedAt]) AS [Year], DATEPART(month, [a].[CreatedAt]) AS [Month]
+    FROM [Appointments] AS [a]
+    WHERE [a].[CreatedAt] >= @__AddMonths_0
+) AS [a0]
+GROUP BY [a0].[Year], [a0].[Month]
+ORDER BY [a0].[Year], [a0].[Month]
+2026-04-16 10:02:15.082 [INF] HTTP GET /api/admin/stats responded 200 in 70.3333 ms
+2026-04-16 10:02:15.106 [INF] Executed DbCommand (6ms) [Parameters=[@__userId_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [d].[Id], [d].[ApplicationStatus], [d].[Bio], [d].[ClinicAddress], [d].[ConsultationFee], [d].[CreatedAt], [d].[IsAvailable], [d].[LicenseNumber], [d].[Rating], [d].[RejectionReason], [d].[ReviewCount], [d].[ReviewedAt], [d].[ReviewedByUserId], [d].[Specialty], [d].[UserId]
+FROM [Doctors] AS [d]
+WHERE [d].[UserId] = @__userId_0
+2026-04-16 10:02:15.110 [INF] HTTP GET /api/appointments/doctor responded 403 in 19.0668 ms
+2026-04-16 10:02:15.126 [INF] Executed DbCommand (5ms) [Parameters=[@__userId_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [Prescriptions] AS [p]
+WHERE [p].[UserId] = @__userId_0
+2026-04-16 10:02:15.135 [INF] Executed DbCommand (7ms) [Parameters=[@__userId_0='?' (DbType = Int32), @__p_1='?' (DbType = Int32), @__p_2='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT [p].[Id], [p].[OriginalFileName], [p].[Status], [p].[MedicationsJson], [p].[CreatedAt]
+FROM [Prescriptions] AS [p]
+WHERE [p].[UserId] = @__userId_0
+ORDER BY [p].[CreatedAt] DESC
+OFFSET @__p_1 ROWS FETCH NEXT @__p_2 ROWS ONLY
+2026-04-16 10:02:15.136 [INF] HTTP GET /api/prescriptions responded 200 in 17.5516 ms
+2026-04-16 10:02:15.175 [INF] Executed DbCommand (25ms) [Parameters=[@__userId_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT [d].[Id] AS [id], [d].[PatientId] AS [patientId], [u].[FirstName] + N' ' + [u].[LastName] AS [patientName], NULL AS [patientAvatar], [d].[DoctorId] AS [doctorId], [u0].[FirstName] + N' ' + [u0].[LastName] AS [doctorName], [d0].[Specialty] AS [doctorSpecialty], [d].[Status] AS [status], [d].[UpdatedAt] AS [updatedAt], (
+    SELECT COUNT(*)
+    FROM [DirectMessages] AS [d1]
+    WHERE [d].[Id] = [d1].[SessionId] AND [d1].[IsRead] = CAST(0 AS bit) AND [d1].[SenderId] <> @__userId_0) AS [unreadCount]
+FROM [DirectChatSessions] AS [d]
+INNER JOIN [Users] AS [u] ON [d].[PatientId] = [u].[Id]
+INNER JOIN [Doctors] AS [d0] ON [d].[DoctorId] = [d0].[Id]
+INNER JOIN [Users] AS [u0] ON [d0].[UserId] = [u0].[Id]
+WHERE [d].[PatientId] = @__userId_0
+ORDER BY [d].[UpdatedAt] DESC
+2026-04-16 10:02:15.176 [INF] HTTP GET /api/direct-chat/sessions responded 200 in 32.4225 ms
+2026-04-16 10:02:47.896 [INF] Application is shutting down...
+2026-04-16 10:02:50.246 [INF] Executed DbCommand (6ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT 1
+2026-04-16 10:02:50.256 [INF] Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+2026-04-16 10:02:50.264 [INF] Executed DbCommand (7ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+DECLARE @result int;
+EXEC @result = sp_getapplock @Resource = '__EFMigrationsLock', @LockOwner = 'Session', @LockMode = 'Exclusive';
+SELECT @result
+2026-04-16 10:02:50.281 [INF] Executed DbCommand (3ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+IF OBJECT_ID(N'[__EFMigrationsHistory]') IS NULL
+BEGIN
+    CREATE TABLE [__EFMigrationsHistory] (
+        [MigrationId] nvarchar(150) NOT NULL,
+        [ProductVersion] nvarchar(32) NOT NULL,
+        CONSTRAINT [PK___EFMigrationsHistory] PRIMARY KEY ([MigrationId])
+    );
+END;
+2026-04-16 10:02:50.286 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT 1
+2026-04-16 10:02:50.288 [INF] Executed DbCommand (2ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT OBJECT_ID(N'[__EFMigrationsHistory]');
+2026-04-16 10:02:50.290 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT [MigrationId], [ProductVersion]
+FROM [__EFMigrationsHistory]
+ORDER BY [MigrationId];
+2026-04-16 10:02:50.293 [INF] No migrations were applied. The database is already up to date.
+2026-04-16 10:02:50.296 [INF] Executed DbCommand (2ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+DECLARE @result int;
+EXEC @result = sp_releaseapplock @Resource = '__EFMigrationsLock', @LockOwner = 'Session';
+SELECT @result
+2026-04-16 10:02:50.363 [INF] Executed DbCommand (3ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT CASE
+    WHEN EXISTS (
+        SELECT 1
+        FROM [Users] AS [u]
+        WHERE [u].[Role] = N'Admin') THEN CAST(1 AS bit)
+    ELSE CAST(0 AS bit)
+END
+2026-04-16 10:02:50.412 [INF] Now listening on: http://localhost:5001
+2026-04-16 10:02:50.413 [INF] Application started. Press Ctrl+C to shut down.
+2026-04-16 10:02:50.413 [INF] Hosting environment: Development
+2026-04-16 10:02:50.413 [INF] Content root path: /Users/dinhtanloc/Projects/MGSPlus/src/backend
+2026-04-16 10:02:57.693 [INF] HTTP GET /health responded 200 in 24.5441 ms
+2026-04-16 10:03:14.617 [INF] Executed DbCommand (9ms) [Parameters=[@__req_Email_0='?' (Size = 256)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [u].[Id], [u].[CreatedAt], [u].[DateOfBirth], [u].[Email], [u].[FirstName], [u].[IsActive], [u].[IsEmailVerified], [u].[LastName], [u].[PasswordHash], [u].[PhoneNumber], [u].[Role], [u].[UpdatedAt]
+FROM [Users] AS [u]
+WHERE [u].[Email] = @__req_Email_0
+2026-04-16 10:03:14.839 [INF] Executed DbCommand (8ms) [Parameters=[@p0='?' (DbType = DateTime2), @p1='?' (DbType = DateTime2), @p2='?' (DbType = Boolean), @p3='?' (Size = 256), @p4='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SET IMPLICIT_TRANSACTIONS OFF;
+SET NOCOUNT ON;
+INSERT INTO [RefreshTokens] ([CreatedAt], [ExpiresAt], [IsRevoked], [Token], [UserId])
+OUTPUT INSERTED.[Id]
+VALUES (@p0, @p1, @p2, @p3, @p4);
+2026-04-16 10:03:14.847 [INF] HTTP POST /api/auth/login responded 200 in 272.6960 ms
+2026-04-16 10:03:14.886 [INF] Executed DbCommand (4ms) [Parameters=[@__userId_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [d].[Id], [d].[ApplicationStatus], [d].[Bio], [d].[ClinicAddress], [d].[ConsultationFee], [d].[CreatedAt], [d].[IsAvailable], [d].[LicenseNumber], [d].[Rating], [d].[RejectionReason], [d].[ReviewCount], [d].[ReviewedAt], [d].[ReviewedByUserId], [d].[Specialty], [d].[UserId]
+FROM [Doctors] AS [d]
+WHERE [d].[UserId] = @__userId_0
+2026-04-16 10:03:14.898 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [Appointments] AS [a]
+2026-04-16 10:03:14.930 [INF] Executed DbCommand (13ms) [Parameters=[@__p_0='?' (DbType = Int32), @__p_1='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT [a0].[Id], [a0].[CancelReason], [a0].[CreatedAt], [a0].[Department], [a0].[Description], [a0].[DoctorId], [a0].[Notes], [a0].[QueueNumber], [a0].[RescheduleReason], [a0].[RescheduledTo], [a0].[ScheduledAt], [a0].[Status], [a0].[UpdatedAt], [a0].[UserId], [u].[Id], [u].[CreatedAt], [u].[DateOfBirth], [u].[Email], [u].[FirstName], [u].[IsActive], [u].[IsEmailVerified], [u].[LastName], [u].[PasswordHash], [u].[PhoneNumber], [u].[Role], [u].[UpdatedAt], [d].[Id], [d].[ApplicationStatus], [d].[Bio], [d].[ClinicAddress], [d].[ConsultationFee], [d].[CreatedAt], [d].[IsAvailable], [d].[LicenseNumber], [d].[Rating], [d].[RejectionReason], [d].[ReviewCount], [d].[ReviewedAt], [d].[ReviewedByUserId], [d].[Specialty], [d].[UserId], [u0].[Id], [u0].[CreatedAt], [u0].[DateOfBirth], [u0].[Email], [u0].[FirstName], [u0].[IsActive], [u0].[IsEmailVerified], [u0].[LastName], [u0].[PasswordHash], [u0].[PhoneNumber], [u0].[Role], [u0].[UpdatedAt]
+FROM (
+    SELECT [a].[Id], [a].[CancelReason], [a].[CreatedAt], [a].[Department], [a].[Description], [a].[DoctorId], [a].[Notes], [a].[QueueNumber], [a].[RescheduleReason], [a].[RescheduledTo], [a].[ScheduledAt], [a].[Status], [a].[UpdatedAt], [a].[UserId]
+    FROM [Appointments] AS [a]
+    ORDER BY [a].[ScheduledAt] DESC
+    OFFSET @__p_0 ROWS FETCH NEXT @__p_1 ROWS ONLY
+) AS [a0]
+INNER JOIN [Users] AS [u] ON [a0].[UserId] = [u].[Id]
+LEFT JOIN [Doctors] AS [d] ON [a0].[DoctorId] = [d].[Id]
+LEFT JOIN [Users] AS [u0] ON [d].[UserId] = [u0].[Id]
+ORDER BY [a0].[ScheduledAt] DESC
+2026-04-16 10:03:14.935 [INF] HTTP GET /api/appointments/doctor responded 200 in 78.4414 ms
+2026-04-16 10:03:35.572 [INF] Executed DbCommand (2ms) [Parameters=[@__req_Email_0='?' (Size = 256)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [u].[Id], [u].[CreatedAt], [u].[DateOfBirth], [u].[Email], [u].[FirstName], [u].[IsActive], [u].[IsEmailVerified], [u].[LastName], [u].[PasswordHash], [u].[PhoneNumber], [u].[Role], [u].[UpdatedAt]
+FROM [Users] AS [u]
+WHERE [u].[Email] = @__req_Email_0
+2026-04-16 10:03:35.748 [INF] Executed DbCommand (7ms) [Parameters=[@p0='?' (DbType = DateTime2), @p1='?' (DbType = DateTime2), @p2='?' (DbType = Boolean), @p3='?' (Size = 256), @p4='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SET IMPLICIT_TRANSACTIONS OFF;
+SET NOCOUNT ON;
+INSERT INTO [RefreshTokens] ([CreatedAt], [ExpiresAt], [IsRevoked], [Token], [UserId])
+OUTPUT INSERTED.[Id]
+VALUES (@p0, @p1, @p2, @p3, @p4);
+2026-04-16 10:03:35.748 [INF] HTTP POST /api/auth/login responded 200 in 181.2247 ms
+2026-04-16 10:03:35.768 [INF] HTTP GET /swagger/index.html responded 200 in 11.0360 ms
+2026-04-16 10:03:35.775 [INF] HTTP POST /hubs/direct-chat/negotiate responded 200 in 2.0682 ms
+2026-04-16 10:03:35.786 [INF] Executed DbCommand (2ms) [Parameters=[@__userId_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [Prescriptions] AS [p]
+WHERE [p].[UserId] = @__userId_0
+2026-04-16 10:03:35.791 [INF] Executed DbCommand (3ms) [Parameters=[@__userId_0='?' (DbType = Int32), @__p_1='?' (DbType = Int32), @__p_2='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT [p].[Id], [p].[OriginalFileName], [p].[Status], [p].[MedicationsJson], [p].[CreatedAt]
+FROM [Prescriptions] AS [p]
+WHERE [p].[UserId] = @__userId_0
+ORDER BY [p].[CreatedAt] DESC
+OFFSET @__p_1 ROWS FETCH NEXT @__p_2 ROWS ONLY
+2026-04-16 10:03:35.792 [INF] HTTP GET /api/prescriptions responded 200 in 12.0378 ms
+2026-04-16 10:03:35.810 [INF] Executed DbCommand (3ms) [Parameters=[@__userId_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT [d].[Id] AS [id], [d].[PatientId] AS [patientId], [u].[FirstName] + N' ' + [u].[LastName] AS [patientName], NULL AS [patientAvatar], [d].[DoctorId] AS [doctorId], [u0].[FirstName] + N' ' + [u0].[LastName] AS [doctorName], [d0].[Specialty] AS [doctorSpecialty], [d].[Status] AS [status], [d].[UpdatedAt] AS [updatedAt], (
+    SELECT COUNT(*)
+    FROM [DirectMessages] AS [d1]
+    WHERE [d].[Id] = [d1].[SessionId] AND [d1].[IsRead] = CAST(0 AS bit) AND [d1].[SenderId] <> @__userId_0) AS [unreadCount]
+FROM [DirectChatSessions] AS [d]
+INNER JOIN [Users] AS [u] ON [d].[PatientId] = [u].[Id]
+INNER JOIN [Doctors] AS [d0] ON [d].[DoctorId] = [d0].[Id]
+INNER JOIN [Users] AS [u0] ON [d0].[UserId] = [u0].[Id]
+WHERE [d].[PatientId] = @__userId_0
+ORDER BY [d].[UpdatedAt] DESC
+2026-04-16 10:03:35.810 [INF] HTTP GET /api/direct-chat/sessions responded 200 in 12.1650 ms
+2026-04-16 10:07:21.394 [INF] Executed DbCommand (7ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [News] AS [n]
+WHERE [n].[IsPublished] = CAST(1 AS bit)
+2026-04-16 10:07:21.408 [INF] Executed DbCommand (8ms) [Parameters=[@__p_0='?' (DbType = Int32), @__p_1='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT [n1].[Id], [n1].[Title], [n1].[Summary], [n1].[ImageUrl], [n1].[Source], [n0].[Name], [n1].[ViewCount], [n1].[PublishedAt]
+FROM (
+    SELECT [n].[Id], [n].[CategoryId], [n].[ImageUrl], [n].[PublishedAt], [n].[Source], [n].[Summary], [n].[Title], [n].[ViewCount]
+    FROM [News] AS [n]
+    WHERE [n].[IsPublished] = CAST(1 AS bit)
+    ORDER BY [n].[PublishedAt] DESC
+    OFFSET @__p_0 ROWS FETCH NEXT @__p_1 ROWS ONLY
+) AS [n1]
+LEFT JOIN [NewsCategories] AS [n0] ON [n1].[CategoryId] = [n0].[Id]
+ORDER BY [n1].[PublishedAt] DESC
+2026-04-16 10:07:21.410 [INF] HTTP GET /api/news responded 200 in 32.8361 ms
+2026-04-16 10:08:18.428 [INF] Executed DbCommand (2ms) [Parameters=[@__req_Email_0='?' (Size = 256)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [u].[Id], [u].[CreatedAt], [u].[DateOfBirth], [u].[Email], [u].[FirstName], [u].[IsActive], [u].[IsEmailVerified], [u].[LastName], [u].[PasswordHash], [u].[PhoneNumber], [u].[Role], [u].[UpdatedAt]
+FROM [Users] AS [u]
+WHERE [u].[Email] = @__req_Email_0
+2026-04-16 10:08:18.561 [INF] Executed DbCommand (6ms) [Parameters=[@p0='?' (DbType = DateTime2), @p1='?' (DbType = DateTime2), @p2='?' (DbType = Boolean), @p3='?' (Size = 256), @p4='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SET IMPLICIT_TRANSACTIONS OFF;
+SET NOCOUNT ON;
+INSERT INTO [RefreshTokens] ([CreatedAt], [ExpiresAt], [IsRevoked], [Token], [UserId])
+OUTPUT INSERTED.[Id]
+VALUES (@p0, @p1, @p2, @p3, @p4);
+2026-04-16 10:08:18.562 [INF] HTTP POST /api/auth/login responded 200 in 139.1318 ms
+2026-04-16 10:08:18.889 [INF] Executed DbCommand (3ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [News] AS [n]
+WHERE [n].[IsPublished] = CAST(1 AS bit)
+2026-04-16 10:08:18.893 [INF] Executed DbCommand (2ms) [Parameters=[@__p_0='?' (DbType = Int32), @__p_1='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT [n1].[Id], [n1].[Title], [n1].[Summary], [n1].[ImageUrl], [n1].[Source], [n0].[Name], [n1].[ViewCount], [n1].[PublishedAt]
+FROM (
+    SELECT [n].[Id], [n].[CategoryId], [n].[ImageUrl], [n].[PublishedAt], [n].[Source], [n].[Summary], [n].[Title], [n].[ViewCount]
+    FROM [News] AS [n]
+    WHERE [n].[IsPublished] = CAST(1 AS bit)
+    ORDER BY [n].[PublishedAt] DESC
+    OFFSET @__p_0 ROWS FETCH NEXT @__p_1 ROWS ONLY
+) AS [n1]
+LEFT JOIN [NewsCategories] AS [n0] ON [n1].[CategoryId] = [n0].[Id]
+ORDER BY [n1].[PublishedAt] DESC
+2026-04-16 10:08:18.894 [INF] HTTP GET /api/news responded 200 in 9.0184 ms
+2026-04-16 10:08:57.098 [INF] Executed DbCommand (2ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [Users] AS [u]
+2026-04-16 10:08:57.100 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [Users] AS [u]
+WHERE [u].[Role] = N'Doctor'
+2026-04-16 10:08:57.102 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [Users] AS [u]
+WHERE [u].[Role] = N'Patient'
+2026-04-16 10:08:57.104 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [Doctors] AS [d]
+WHERE [d].[ApplicationStatus] = N'Pending'
+2026-04-16 10:08:57.105 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [Appointments] AS [a]
+2026-04-16 10:08:57.106 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [BlogPosts] AS [b]
+2026-04-16 10:08:57.108 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [News] AS [n]
+2026-04-16 10:08:57.111 [INF] Executed DbCommand (1ms) [Parameters=[@__now_Year_0='?' (DbType = Int32), @__now_Month_1='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [Appointments] AS [a]
+WHERE DATEPART(year, [a].[CreatedAt]) = @__now_Year_0 AND DATEPART(month, [a].[CreatedAt]) = @__now_Month_1
+2026-04-16 10:08:57.118 [INF] Executed DbCommand (5ms) [Parameters=[@__status_0='?' (Size = 20)], CommandType='"Text"', CommandTimeout='30']
+SELECT [d].[Id], [d].[UserId], [u].[FirstName] + N' ' + [u].[LastName], [u].[Email], [d].[Specialty], [d].[LicenseNumber], [d].[Bio], [d].[ConsultationFee], [d].[ApplicationStatus], [d].[RejectionReason], [d].[CreatedAt]
+FROM [Doctors] AS [d]
+INNER JOIN [Users] AS [u] ON [d].[UserId] = [u].[Id]
+WHERE [d].[ApplicationStatus] = @__status_0
+ORDER BY [d].[CreatedAt] DESC
+2026-04-16 10:08:57.120 [INF] HTTP GET /api/admin/doctor-applications responded 200 in 29.3065 ms
+2026-04-16 10:08:57.121 [INF] Executed DbCommand (1ms) [Parameters=[@__AddMonths_0='?' (DbType = DateTime2)], CommandType='"Text"', CommandTimeout='30']
+SELECT [a0].[Year], [a0].[Month], COUNT(*) AS [Count]
+FROM (
+    SELECT DATEPART(year, [a].[CreatedAt]) AS [Year], DATEPART(month, [a].[CreatedAt]) AS [Month]
+    FROM [Appointments] AS [a]
+    WHERE [a].[CreatedAt] >= @__AddMonths_0
+) AS [a0]
+GROUP BY [a0].[Year], [a0].[Month]
+ORDER BY [a0].[Year], [a0].[Month]
+2026-04-16 10:08:57.122 [INF] HTTP GET /api/admin/stats responded 200 in 31.0338 ms
+2026-04-16 10:09:01.599 [INF] Executed DbCommand (2ms) [Parameters=[@__status_0='?' (Size = 20)], CommandType='"Text"', CommandTimeout='30']
+SELECT [d].[Id], [d].[UserId], [u].[FirstName] + N' ' + [u].[LastName], [u].[Email], [d].[Specialty], [d].[LicenseNumber], [d].[Bio], [d].[ConsultationFee], [d].[ApplicationStatus], [d].[RejectionReason], [d].[CreatedAt]
+FROM [Doctors] AS [d]
+INNER JOIN [Users] AS [u] ON [d].[UserId] = [u].[Id]
+WHERE [d].[ApplicationStatus] = @__status_0
+ORDER BY [d].[CreatedAt] DESC
+2026-04-16 10:09:01.599 [INF] HTTP GET /api/admin/doctor-applications responded 200 in 5.5308 ms
+2026-04-16 10:09:03.354 [INF] Executed DbCommand (3ms) [Parameters=[@__status_0='?' (Size = 20)], CommandType='"Text"', CommandTimeout='30']
+SELECT [d].[Id], [d].[UserId], [u].[FirstName] + N' ' + [u].[LastName], [u].[Email], [d].[Specialty], [d].[LicenseNumber], [d].[Bio], [d].[ConsultationFee], [d].[ApplicationStatus], [d].[RejectionReason], [d].[CreatedAt]
+FROM [Doctors] AS [d]
+INNER JOIN [Users] AS [u] ON [d].[UserId] = [u].[Id]
+WHERE [d].[ApplicationStatus] = @__status_0
+ORDER BY [d].[CreatedAt] DESC
+2026-04-16 10:09:03.355 [INF] HTTP GET /api/admin/doctor-applications responded 200 in 5.5772 ms
+2026-04-16 10:09:05.377 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [Users] AS [u]
+2026-04-16 10:09:05.385 [INF] Executed DbCommand (6ms) [Parameters=[@__p_0='?' (DbType = Int32), @__p_1='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT [u].[Id], [u].[Email], [u].[FirstName], [u].[LastName], [u].[Role], [u].[IsActive], [u].[IsEmailVerified], [u].[CreatedAt]
+FROM [Users] AS [u]
+ORDER BY [u].[CreatedAt] DESC
+OFFSET @__p_0 ROWS FETCH NEXT @__p_1 ROWS ONLY
+2026-04-16 10:09:05.386 [INF] HTTP GET /api/admin/users responded 200 in 14.4435 ms
+2026-04-16 10:09:12.065 [INF] Executed DbCommand (3ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [News] AS [n]
+WHERE [n].[IsPublished] = CAST(1 AS bit)
+2026-04-16 10:09:12.067 [INF] Executed DbCommand (2ms) [Parameters=[@__p_0='?' (DbType = Int32), @__p_1='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT [n1].[Id], [n1].[Title], [n1].[Summary], [n1].[ImageUrl], [n1].[Source], [n0].[Name], [n1].[ViewCount], [n1].[PublishedAt]
+FROM (
+    SELECT [n].[Id], [n].[CategoryId], [n].[ImageUrl], [n].[PublishedAt], [n].[Source], [n].[Summary], [n].[Title], [n].[ViewCount]
+    FROM [News] AS [n]
+    WHERE [n].[IsPublished] = CAST(1 AS bit)
+    ORDER BY [n].[PublishedAt] DESC
+    OFFSET @__p_0 ROWS FETCH NEXT @__p_1 ROWS ONLY
+) AS [n1]
+LEFT JOIN [NewsCategories] AS [n0] ON [n1].[CategoryId] = [n0].[Id]
+ORDER BY [n1].[PublishedAt] DESC
+2026-04-16 10:09:12.068 [INF] HTTP GET /api/news responded 200 in 7.9870 ms
+2026-04-16 10:09:59.461 [INF] Executed DbCommand (14ms) [Parameters=[@__hashed_0='?' (Size = 256)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [r].[Id], [r].[CreatedAt], [r].[ExpiresAt], [r].[IsRevoked], [r].[Token], [r].[UserId]
+FROM [RefreshTokens] AS [r]
+WHERE [r].[Token] = @__hashed_0
+2026-04-16 10:09:59.487 [INF] Executed DbCommand (22ms) [Parameters=[@p1='?' (DbType = Int32), @p0='?' (DbType = Boolean)], CommandType='"Text"', CommandTimeout='30']
+SET IMPLICIT_TRANSACTIONS OFF;
+SET NOCOUNT ON;
+UPDATE [RefreshTokens] SET [IsRevoked] = @p0
+OUTPUT 1
+WHERE [Id] = @p1;
+2026-04-16 10:09:59.490 [INF] HTTP POST /api/auth/logout responded 204 in 53.6362 ms
+2026-04-16 10:10:23.023 [INF] HTTP POST /api/chatbot/sessions responded 401 in 10.4269 ms
+2026-04-16 10:10:30.719 [INF] Executed DbCommand (2ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [News] AS [n]
+WHERE [n].[IsPublished] = CAST(1 AS bit)
+2026-04-16 10:10:30.721 [INF] Executed DbCommand (1ms) [Parameters=[@__p_0='?' (DbType = Int32), @__p_1='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT [n1].[Id], [n1].[Title], [n1].[Summary], [n1].[ImageUrl], [n1].[Source], [n0].[Name], [n1].[ViewCount], [n1].[PublishedAt]
+FROM (
+    SELECT [n].[Id], [n].[CategoryId], [n].[ImageUrl], [n].[PublishedAt], [n].[Source], [n].[Summary], [n].[Title], [n].[ViewCount]
+    FROM [News] AS [n]
+    WHERE [n].[IsPublished] = CAST(1 AS bit)
+    ORDER BY [n].[PublishedAt] DESC
+    OFFSET @__p_0 ROWS FETCH NEXT @__p_1 ROWS ONLY
+) AS [n1]
+LEFT JOIN [NewsCategories] AS [n0] ON [n1].[CategoryId] = [n0].[Id]
+ORDER BY [n1].[PublishedAt] DESC
+2026-04-16 10:10:30.721 [INF] HTTP GET /api/news responded 200 in 5.0212 ms
+2026-04-16 10:10:32.508 [INF] HTTP POST /api/chatbot/sessions responded 401 in 0.8778 ms
+2026-04-16 10:10:36.139 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [News] AS [n]
+WHERE [n].[IsPublished] = CAST(1 AS bit)
+2026-04-16 10:10:36.142 [INF] Executed DbCommand (2ms) [Parameters=[@__p_0='?' (DbType = Int32), @__p_1='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT [n1].[Id], [n1].[Title], [n1].[Summary], [n1].[ImageUrl], [n1].[Source], [n0].[Name], [n1].[ViewCount], [n1].[PublishedAt]
+FROM (
+    SELECT [n].[Id], [n].[CategoryId], [n].[ImageUrl], [n].[PublishedAt], [n].[Source], [n].[Summary], [n].[Title], [n].[ViewCount]
+    FROM [News] AS [n]
+    WHERE [n].[IsPublished] = CAST(1 AS bit)
+    ORDER BY [n].[PublishedAt] DESC
+    OFFSET @__p_0 ROWS FETCH NEXT @__p_1 ROWS ONLY
+) AS [n1]
+LEFT JOIN [NewsCategories] AS [n0] ON [n1].[CategoryId] = [n0].[Id]
+ORDER BY [n1].[PublishedAt] DESC
+2026-04-16 10:10:36.142 [INF] HTTP GET /api/news responded 200 in 5.2289 ms
+2026-04-16 10:10:39.302 [INF] HTTP POST /api/chatbot/sessions responded 401 in 0.6348 ms
+2026-04-16 10:15:50.386 [INF] HTTP GET /health responded 200 in 1.2417 ms
+2026-04-16 10:16:00.739 [INF] Executed DbCommand (1ms) [Parameters=[@__req_Email_0='?' (Size = 256)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [u].[Id], [u].[CreatedAt], [u].[DateOfBirth], [u].[Email], [u].[FirstName], [u].[IsActive], [u].[IsEmailVerified], [u].[LastName], [u].[PasswordHash], [u].[PhoneNumber], [u].[Role], [u].[UpdatedAt]
+FROM [Users] AS [u]
+WHERE [u].[Email] = @__req_Email_0
+2026-04-16 10:16:00.845 [INF] Executed DbCommand (7ms) [Parameters=[@p0='?' (DbType = DateTime2), @p1='?' (DbType = DateTime2), @p2='?' (DbType = Boolean), @p3='?' (Size = 256), @p4='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SET IMPLICIT_TRANSACTIONS OFF;
+SET NOCOUNT ON;
+INSERT INTO [RefreshTokens] ([CreatedAt], [ExpiresAt], [IsRevoked], [Token], [UserId])
+OUTPUT INSERTED.[Id]
+VALUES (@p0, @p1, @p2, @p3, @p4);
+2026-04-16 10:16:00.846 [INF] HTTP POST /api/auth/login responded 200 in 124.7741 ms
+2026-04-16 10:16:00.854 [INF] HTTP GET /api/admin/analytics responded 404 in 0.3088 ms
+2026-04-16 10:20:14.635 [INF] Executed DbCommand (3ms) [Parameters=[@__req_Email_0='?' (Size = 256)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [u].[Id], [u].[CreatedAt], [u].[DateOfBirth], [u].[Email], [u].[FirstName], [u].[IsActive], [u].[IsEmailVerified], [u].[LastName], [u].[PasswordHash], [u].[PhoneNumber], [u].[Role], [u].[UpdatedAt]
+FROM [Users] AS [u]
+WHERE [u].[Email] = @__req_Email_0
+2026-04-16 10:20:14.737 [INF] Executed DbCommand (4ms) [Parameters=[@p0='?' (DbType = DateTime2), @p1='?' (DbType = DateTime2), @p2='?' (DbType = Boolean), @p3='?' (Size = 256), @p4='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SET IMPLICIT_TRANSACTIONS OFF;
+SET NOCOUNT ON;
+INSERT INTO [RefreshTokens] ([CreatedAt], [ExpiresAt], [IsRevoked], [Token], [UserId])
+OUTPUT INSERTED.[Id]
+VALUES (@p0, @p1, @p2, @p3, @p4);
+2026-04-16 10:20:14.738 [INF] HTTP POST /api/auth/login responded 200 in 106.5380 ms
+2026-04-16 10:20:14.746 [INF] HTTP GET /api/admin/analytics responded 404 in 0.2217 ms
+2026-04-16 10:20:55.858 [INF] Application is shutting down...
+01: address already in use.
+ ---> Microsoft.AspNetCore.Connections.AddressInUseException: Address already in use
+ ---> System.Net.Sockets.SocketException (48): Address already in use
+   at System.Net.Sockets.Socket.DoBind(EndPoint endPointSnapshot, SocketAddress socketAddress)
+   at System.Net.Sockets.Socket.Bind(EndPoint localEP)
+   at Microsoft.AspNetCore.Server.Kestrel.Transport.Sockets.SocketTransportOptions.CreateDefaultBoundListenSocket(EndPoint endpoint)
+   at Microsoft.AspNetCore.Server.Kestrel.Transport.Sockets.SocketConnectionListener.Bind()
+   --- End of inner exception stack trace ---
+   at Microsoft.AspNetCore.Server.Kestrel.Transport.Sockets.SocketConnectionListener.Bind()
+   at Microsoft.AspNetCore.Server.Kestrel.Transport.Sockets.SocketTransportFactory.BindAsync(EndPoint endpoint, CancellationToken cancellationToken)
+   at Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Infrastructure.TransportManager.BindAsync(EndPoint endPoint, ConnectionDelegate connectionDelegate, EndpointConfig endpointConfig, CancellationToken cancellationToken)
+   at Microsoft.AspNetCore.Server.Kestrel.Core.KestrelServerImpl.<>c__DisplayClass28_0`1.<<StartAsync>g__OnBind|0>d.MoveNext()
+--- End of stack trace from previous location ---
+   at Microsoft.AspNetCore.Server.Kestrel.Core.Internal.AddressBinder.BindEndpointAsync(ListenOptions endpoint, AddressBindContext context, CancellationToken cancellationToken)
+   --- End of inner exception stack trace ---
+   at Microsoft.AspNetCore.Server.Kestrel.Core.Internal.AddressBinder.BindEndpointAsync(ListenOptions endpoint, AddressBindContext context, CancellationToken cancellationToken)
+   at Microsoft.AspNetCore.Server.Kestrel.Core.LocalhostListenOptions.BindAsync(AddressBindContext context, CancellationToken cancellationToken)
+   at Microsoft.AspNetCore.Server.Kestrel.Core.Internal.AddressBinder.AddressesStrategy.BindAsync(AddressBindContext context, CancellationToken cancellationToken)
+   at Microsoft.AspNetCore.Server.Kestrel.Core.KestrelServerImpl.BindAsync(CancellationToken cancellationToken)
+   at Microsoft.AspNetCore.Server.Kestrel.Core.KestrelServerImpl.StartAsync[TContext](IHttpApplication`1 application, CancellationToken cancellationToken)
+   at Microsoft.AspNetCore.Hosting.GenericWebHostService.StartAsync(CancellationToken cancellationToken)
+   at Microsoft.Extensions.Hosting.Internal.Host.<StartAsync>b__14_1(IHostedService service, CancellationToken token)
+   at Microsoft.Extensions.Hosting.Internal.Host.ForeachService[T](IEnumerable`1 services, CancellationToken token, Boolean concurrent, Boolean abortOnFirstException, List`1 exceptions, Func`3 operation)
+2026-04-16 10:20:58.977 [INF] Executed DbCommand (6ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT 1
+2026-04-16 10:20:58.988 [INF] Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+2026-04-16 10:20:58.994 [INF] Executed DbCommand (6ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+DECLARE @result int;
+EXEC @result = sp_getapplock @Resource = '__EFMigrationsLock', @LockOwner = 'Session', @LockMode = 'Exclusive';
+SELECT @result
+2026-04-16 10:20:59.011 [INF] Executed DbCommand (2ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+IF OBJECT_ID(N'[__EFMigrationsHistory]') IS NULL
+BEGIN
+    CREATE TABLE [__EFMigrationsHistory] (
+        [MigrationId] nvarchar(150) NOT NULL,
+        [ProductVersion] nvarchar(32) NOT NULL,
+        CONSTRAINT [PK___EFMigrationsHistory] PRIMARY KEY ([MigrationId])
+    );
+END;
+2026-04-16 10:20:59.015 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT 1
+2026-04-16 10:20:59.016 [INF] Executed DbCommand (2ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT OBJECT_ID(N'[__EFMigrationsHistory]');
+2026-04-16 10:20:59.018 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT [MigrationId], [ProductVersion]
+FROM [__EFMigrationsHistory]
+ORDER BY [MigrationId];
+2026-04-16 10:20:59.020 [INF] No migrations were applied. The database is already up to date.
+2026-04-16 10:20:59.024 [INF] Executed DbCommand (2ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+DECLARE @result int;
+EXEC @result = sp_releaseapplock @Resource = '__EFMigrationsLock', @LockOwner = 'Session';
+SELECT @result
+2026-04-16 10:20:59.090 [INF] Executed DbCommand (2ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT CASE
+    WHEN EXISTS (
+        SELECT 1
+        FROM [Users] AS [u]
+        WHERE [u].[Role] = N'Admin') THEN CAST(1 AS bit)
+    ELSE CAST(0 AS bit)
+END
+2026-04-16 10:20:59.138 [INF] Now listening on: http://localhost:5001
+2026-04-16 10:20:59.138 [INF] Application started. Press Ctrl+C to shut down.
+2026-04-16 10:20:59.138 [INF] Hosting environment: Development
+2026-04-16 10:20:59.138 [INF] Content root path: /Users/dinhtanloc/Projects/MGSPlus/src/backend
+2026-04-16 10:21:05.931 [INF] HTTP GET /health responded 200 in 24.4190 ms
+2026-04-16 10:21:12.390 [INF] Executed DbCommand (10ms) [Parameters=[@__req_Email_0='?' (Size = 256)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [u].[Id], [u].[CreatedAt], [u].[DateOfBirth], [u].[Email], [u].[FirstName], [u].[IsActive], [u].[IsEmailVerified], [u].[LastName], [u].[PasswordHash], [u].[PhoneNumber], [u].[Role], [u].[UpdatedAt]
+FROM [Users] AS [u]
+WHERE [u].[Email] = @__req_Email_0
+2026-04-16 10:21:12.611 [INF] Executed DbCommand (7ms) [Parameters=[@p0='?' (DbType = DateTime2), @p1='?' (DbType = DateTime2), @p2='?' (DbType = Boolean), @p3='?' (Size = 256), @p4='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SET IMPLICIT_TRANSACTIONS OFF;
+SET NOCOUNT ON;
+INSERT INTO [RefreshTokens] ([CreatedAt], [ExpiresAt], [IsRevoked], [Token], [UserId])
+OUTPUT INSERTED.[Id]
+VALUES (@p0, @p1, @p2, @p3, @p4);
+2026-04-16 10:21:12.620 [INF] HTTP POST /api/auth/login responded 200 in 275.6446 ms
+2026-04-16 10:21:12.690 [INF] Executed DbCommand (17ms) [Parameters=[@__day30_0='?' (DbType = DateTime2)], CommandType='"Text"', CommandTimeout='30']
+SELECT [u0].[Key] AS [Date], COUNT(*) AS [Count]
+FROM (
+    SELECT CONVERT(date, [u].[CreatedAt]) AS [Key]
+    FROM [Users] AS [u]
+    WHERE [u].[CreatedAt] >= @__day30_0
+) AS [u0]
+GROUP BY [u0].[Key]
+ORDER BY [u0].[Key]
+2026-04-16 10:21:12.697 [INF] Executed DbCommand (5ms) [Parameters=[@__day30_0='?' (DbType = DateTime2)], CommandType='"Text"', CommandTimeout='30']
+SELECT [c0].[Key] AS [Date], COUNT(*) AS [Count]
+FROM (
+    SELECT CONVERT(date, [c].[CreatedAt]) AS [Key]
+    FROM [ChatSessions] AS [c]
+    WHERE [c].[CreatedAt] >= @__day30_0
+) AS [c0]
+GROUP BY [c0].[Key]
+ORDER BY [c0].[Key]
+2026-04-16 10:21:12.709 [INF] Executed DbCommand (7ms) [Parameters=[@__day30_0='?' (DbType = DateTime2)], CommandType='"Text"', CommandTimeout='30']
+SELECT [c0].[Key] AS [Model], COALESCE(SUM(COALESCE([c0].[TokensUsed], 0)), 0) AS [Tokens], COUNT(*) AS [Calls]
+FROM (
+    SELECT [c].[TokensUsed], COALESCE([c].[Model], N'unknown') AS [Key]
+    FROM [ChatMessages] AS [c]
+    WHERE [c].[CreatedAt] >= @__day30_0 AND [c].[TokensUsed] IS NOT NULL AND [c].[Role] = N'assistant'
+) AS [c0]
+GROUP BY [c0].[Key]
+ORDER BY COALESCE(SUM(COALESCE([c0].[TokensUsed], 0)), 0) DESC
+2026-04-16 10:21:12.713 [INF] Executed DbCommand (3ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT [a].[Status], COUNT(*) AS [Count]
+FROM [Appointments] AS [a]
+GROUP BY [a].[Status]
+2026-04-16 10:21:12.717 [INF] Executed DbCommand (3ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT [u].[Role], COUNT(*) AS [Count]
+FROM [Users] AS [u]
+GROUP BY [u].[Role]
+2026-04-16 10:21:12.721 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [DirectChatSessions] AS [d]
+2026-04-16 10:21:12.724 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [DirectMessages] AS [d]
+2026-04-16 10:21:12.727 [INF] Executed DbCommand (2ms) [Parameters=[@__now_Date_0='?' (DbType = DateTime2)], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [DirectMessages] AS [d]
+WHERE CONVERT(date, [d].[SentAt]) = @__now_Date_0
+2026-04-16 10:21:12.730 [INF] Executed DbCommand (3ms) [Parameters=[@__day7_0='?' (DbType = DateTime2)], CommandType='"Text"', CommandTimeout='30']
+SELECT [d0].[Key] AS [Date], COUNT(*) AS [Count]
+FROM (
+    SELECT CONVERT(date, [d].[SentAt]) AS [Key]
+    FROM [DirectMessages] AS [d]
+    WHERE [d].[SentAt] >= @__day7_0
+) AS [d0]
+GROUP BY [d0].[Key]
+ORDER BY [d0].[Key]
+2026-04-16 10:21:12.733 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [Prescriptions] AS [p]
+2026-04-16 10:21:12.735 [INF] Executed DbCommand (2ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [Prescriptions] AS [p]
+WHERE [p].[Status] = N'Processed'
+2026-04-16 10:21:12.736 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [Prescriptions] AS [p]
+WHERE [p].[Status] = N'Failed'
+2026-04-16 10:21:12.737 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [Prescriptions] AS [p]
+WHERE [p].[Status] = N'Pending'
+2026-04-16 10:21:12.764 [INF] Executed DbCommand (13ms) [Parameters=[@__p_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT [d0].[Id] AS [id], [u].[FirstName] + N' ' + [u].[LastName] AS [patientName], [u0].[FirstName] + N' ' + [u0].[LastName] AS [doctorName], [d1].[Specialty] AS [specialty], (
+    SELECT COUNT(*)
+    FROM [DirectMessages] AS [d2]
+    WHERE [d0].[Id] = [d2].[SessionId]) AS [msgCount], [d0].[Status] AS [status], [d0].[UpdatedAt] AS [updatedAt]
+FROM (
+    SELECT TOP(@__p_0) [d].[Id], [d].[DoctorId], [d].[PatientId], [d].[Status], [d].[UpdatedAt]
+    FROM [DirectChatSessions] AS [d]
+    ORDER BY [d].[UpdatedAt] DESC
+) AS [d0]
+INNER JOIN [Users] AS [u] ON [d0].[PatientId] = [u].[Id]
+INNER JOIN [Doctors] AS [d1] ON [d0].[DoctorId] = [d1].[Id]
+INNER JOIN [Users] AS [u0] ON [d1].[UserId] = [u0].[Id]
+ORDER BY [d0].[UpdatedAt] DESC
+2026-04-16 10:21:12.775 [INF] Executed DbCommand (5ms) [Parameters=[@__p_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT [c0].[Id] AS [id], COALESCE([c0].[Title], N'Phiên không tiêu đề') AS [title], CASE
+    WHEN [u].[Id] IS NOT NULL THEN COALESCE([u].[FirstName], N'') + N' ' + COALESCE([u].[LastName], N'')
+    ELSE N'Ẩn danh'
+END AS [userName], [c0].[SessionType] AS [sessionType], (
+    SELECT COUNT(*)
+    FROM [ChatMessages] AS [c1]
+    WHERE [c0].[Id] = [c1].[SessionId]) AS [msgCount], [c0].[UpdatedAt] AS [updatedAt]
+FROM (
+    SELECT TOP(@__p_0) [c].[Id], [c].[SessionType], [c].[Title], [c].[UpdatedAt], [c].[UserId]
+    FROM [ChatSessions] AS [c]
+    ORDER BY [c].[UpdatedAt] DESC
+) AS [c0]
+LEFT JOIN [Users] AS [u] ON [c0].[UserId] = [u].[Id]
+ORDER BY [c0].[UpdatedAt] DESC
+2026-04-16 10:21:12.779 [INF] HTTP GET /api/admin/analytics responded 200 in 150.7188 ms
+2026-04-16 10:26:41.010 [INF] Executed DbCommand (2ms) [Parameters=[@__req_Email_0='?' (Size = 256)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [u].[Id], [u].[CreatedAt], [u].[DateOfBirth], [u].[Email], [u].[FirstName], [u].[IsActive], [u].[IsEmailVerified], [u].[LastName], [u].[PasswordHash], [u].[PhoneNumber], [u].[Role], [u].[UpdatedAt]
+FROM [Users] AS [u]
+WHERE [u].[Email] = @__req_Email_0
+2026-04-16 10:26:41.187 [INF] Executed DbCommand (7ms) [Parameters=[@p0='?' (DbType = DateTime2), @p1='?' (DbType = DateTime2), @p2='?' (DbType = Boolean), @p3='?' (Size = 256), @p4='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SET IMPLICIT_TRANSACTIONS OFF;
+SET NOCOUNT ON;
+INSERT INTO [RefreshTokens] ([CreatedAt], [ExpiresAt], [IsRevoked], [Token], [UserId])
+OUTPUT INSERTED.[Id]
+VALUES (@p0, @p1, @p2, @p3, @p4);
+2026-04-16 10:26:41.188 [INF] HTTP POST /api/auth/login responded 200 in 183.6345 ms
+2026-04-16 10:26:41.201 [INF] Executed DbCommand (2ms) [Parameters=[@__day30_0='?' (DbType = DateTime2)], CommandType='"Text"', CommandTimeout='30']
+SELECT [u0].[Key] AS [Date], COUNT(*) AS [Count]
+FROM (
+    SELECT CONVERT(date, [u].[CreatedAt]) AS [Key]
+    FROM [Users] AS [u]
+    WHERE [u].[CreatedAt] >= @__day30_0
+) AS [u0]
+GROUP BY [u0].[Key]
+ORDER BY [u0].[Key]
+2026-04-16 10:26:41.202 [INF] Executed DbCommand (1ms) [Parameters=[@__day30_0='?' (DbType = DateTime2)], CommandType='"Text"', CommandTimeout='30']
+SELECT [c0].[Key] AS [Date], COUNT(*) AS [Count]
+FROM (
+    SELECT CONVERT(date, [c].[CreatedAt]) AS [Key]
+    FROM [ChatSessions] AS [c]
+    WHERE [c].[CreatedAt] >= @__day30_0
+) AS [c0]
+GROUP BY [c0].[Key]
+ORDER BY [c0].[Key]
+2026-04-16 10:26:41.203 [INF] Executed DbCommand (2ms) [Parameters=[@__day30_0='?' (DbType = DateTime2)], CommandType='"Text"', CommandTimeout='30']
+SELECT [c0].[Key] AS [Model], COALESCE(SUM(COALESCE([c0].[TokensUsed], 0)), 0) AS [Tokens], COUNT(*) AS [Calls]
+FROM (
+    SELECT [c].[TokensUsed], COALESCE([c].[Model], N'unknown') AS [Key]
+    FROM [ChatMessages] AS [c]
+    WHERE [c].[CreatedAt] >= @__day30_0 AND [c].[TokensUsed] IS NOT NULL AND [c].[Role] = N'assistant'
+) AS [c0]
+GROUP BY [c0].[Key]
+ORDER BY COALESCE(SUM(COALESCE([c0].[TokensUsed], 0)), 0) DESC
+2026-04-16 10:26:41.205 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT [a].[Status], COUNT(*) AS [Count]
+FROM [Appointments] AS [a]
+GROUP BY [a].[Status]
+2026-04-16 10:26:41.206 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT [u].[Role], COUNT(*) AS [Count]
+FROM [Users] AS [u]
+GROUP BY [u].[Role]
+2026-04-16 10:26:41.207 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [DirectChatSessions] AS [d]
+2026-04-16 10:26:41.208 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [DirectMessages] AS [d]
+2026-04-16 10:26:41.209 [INF] Executed DbCommand (1ms) [Parameters=[@__now_Date_0='?' (DbType = DateTime2)], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [DirectMessages] AS [d]
+WHERE CONVERT(date, [d].[SentAt]) = @__now_Date_0
+2026-04-16 10:26:41.210 [INF] Executed DbCommand (1ms) [Parameters=[@__day7_0='?' (DbType = DateTime2)], CommandType='"Text"', CommandTimeout='30']
+SELECT [d0].[Key] AS [Date], COUNT(*) AS [Count]
+FROM (
+    SELECT CONVERT(date, [d].[SentAt]) AS [Key]
+    FROM [DirectMessages] AS [d]
+    WHERE [d].[SentAt] >= @__day7_0
+) AS [d0]
+GROUP BY [d0].[Key]
+ORDER BY [d0].[Key]
+2026-04-16 10:26:41.211 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [Prescriptions] AS [p]
+2026-04-16 10:26:41.212 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [Prescriptions] AS [p]
+WHERE [p].[Status] = N'Processed'
+2026-04-16 10:26:41.213 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [Prescriptions] AS [p]
+WHERE [p].[Status] = N'Failed'
+2026-04-16 10:26:41.214 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [Prescriptions] AS [p]
+WHERE [p].[Status] = N'Pending'
+2026-04-16 10:26:41.215 [INF] Executed DbCommand (1ms) [Parameters=[@__p_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT [d0].[Id] AS [id], [u].[FirstName] + N' ' + [u].[LastName] AS [patientName], [u0].[FirstName] + N' ' + [u0].[LastName] AS [doctorName], [d1].[Specialty] AS [specialty], (
+    SELECT COUNT(*)
+    FROM [DirectMessages] AS [d2]
+    WHERE [d0].[Id] = [d2].[SessionId]) AS [msgCount], [d0].[Status] AS [status], [d0].[UpdatedAt] AS [updatedAt]
+FROM (
+    SELECT TOP(@__p_0) [d].[Id], [d].[DoctorId], [d].[PatientId], [d].[Status], [d].[UpdatedAt]
+    FROM [DirectChatSessions] AS [d]
+    ORDER BY [d].[UpdatedAt] DESC
+) AS [d0]
+INNER JOIN [Users] AS [u] ON [d0].[PatientId] = [u].[Id]
+INNER JOIN [Doctors] AS [d1] ON [d0].[DoctorId] = [d1].[Id]
+INNER JOIN [Users] AS [u0] ON [d1].[UserId] = [u0].[Id]
+ORDER BY [d0].[UpdatedAt] DESC
+2026-04-16 10:26:41.216 [INF] Executed DbCommand (1ms) [Parameters=[@__p_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT [c0].[Id] AS [id], COALESCE([c0].[Title], N'Phiên không tiêu đề') AS [title], CASE
+    WHEN [u].[Id] IS NOT NULL THEN COALESCE([u].[FirstName], N'') + N' ' + COALESCE([u].[LastName], N'')
+    ELSE N'Ẩn danh'
+END AS [userName], [c0].[SessionType] AS [sessionType], (
+    SELECT COUNT(*)
+    FROM [ChatMessages] AS [c1]
+    WHERE [c0].[Id] = [c1].[SessionId]) AS [msgCount], [c0].[UpdatedAt] AS [updatedAt]
+FROM (
+    SELECT TOP(@__p_0) [c].[Id], [c].[SessionType], [c].[Title], [c].[UpdatedAt], [c].[UserId]
+    FROM [ChatSessions] AS [c]
+    ORDER BY [c].[UpdatedAt] DESC
+) AS [c0]
+LEFT JOIN [Users] AS [u] ON [c0].[UserId] = [u].[Id]
+ORDER BY [c0].[UpdatedAt] DESC
+2026-04-16 10:26:41.216 [INF] HTTP GET /api/admin/analytics responded 200 in 19.6115 ms
+2026-04-16 16:47:20.718 [INF] HTTP GET /health responded 200 in 1.7310 ms
+2026-04-16 16:47:31.432 [WRN] DB startup skipped — database not reachable: A network-related or instance-specific error occurred while establishing a connection to SQL Server. The server was not found or was not accessible. Verify that the instance name is correct and that SQL Server is configured to allow remote connections. (provider: TCP Provider, error: 40 - Could not open a connection to SQL Server)
+2026-04-16 16:47:31.515 [ERR] Hosting failed to start
+System.IO.IOException: Failed to bind to address http://127.0.0.1:5001: address already in use.
+ ---> Microsoft.AspNetCore.Connections.AddressInUseException: Address already in use
+ ---> System.Net.Sockets.SocketException (48): Address already in use
+   at System.Net.Sockets.Socket.DoBind(EndPoint endPointSnapshot, SocketAddress socketAddress)
+   at System.Net.Sockets.Socket.Bind(EndPoint localEP)
+   at Microsoft.AspNetCore.Server.Kestrel.Transport.Sockets.SocketTransportOptions.CreateDefaultBoundListenSocket(EndPoint endpoint)
+   at Microsoft.AspNetCore.Server.Kestrel.Transport.Sockets.SocketConnectionListener.Bind()
+   --- End of inner exception stack trace ---
+   at Microsoft.AspNetCore.Server.Kestrel.Transport.Sockets.SocketConnectionListener.Bind()
+   at Microsoft.AspNetCore.Server.Kestrel.Transport.Sockets.SocketTransportFactory.BindAsync(EndPoint endpoint, CancellationToken cancellationToken)
+   at Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Infrastructure.TransportManager.BindAsync(EndPoint endPoint, ConnectionDelegate connectionDelegate, EndpointConfig endpointConfig, CancellationToken cancellationToken)
+   at Microsoft.AspNetCore.Server.Kestrel.Core.KestrelServerImpl.<>c__DisplayClass28_0`1.<<StartAsync>g__OnBind|0>d.MoveNext()
+--- End of stack trace from previous location ---
+   at Microsoft.AspNetCore.Server.Kestrel.Core.Internal.AddressBinder.BindEndpointAsync(ListenOptions endpoint, AddressBindContext context, CancellationToken cancellationToken)
+   --- End of inner exception stack trace ---
+   at Microsoft.AspNetCore.Server.Kestrel.Core.Internal.AddressBinder.BindEndpointAsync(ListenOptions endpoint, AddressBindContext context, CancellationToken cancellationToken)
+   at Microsoft.AspNetCore.Server.Kestrel.Core.LocalhostListenOptions.BindAsync(AddressBindContext context, CancellationToken cancellationToken)
+   at Microsoft.AspNetCore.Server.Kestrel.Core.Internal.AddressBinder.AddressesStrategy.BindAsync(AddressBindContext context, CancellationToken cancellationToken)
+   at Microsoft.AspNetCore.Server.Kestrel.Core.KestrelServerImpl.BindAsync(CancellationToken cancellationToken)
+   at Microsoft.AspNetCore.Server.Kestrel.Core.KestrelServerImpl.StartAsync[TContext](IHttpApplication`1 application, CancellationToken cancellationToken)
+   at Microsoft.AspNetCore.Hosting.GenericWebHostService.StartAsync(CancellationToken cancellationToken)
+   at Microsoft.Extensions.Hosting.Internal.Host.<StartAsync>b__14_1(IHostedService service, CancellationToken token)
+   at Microsoft.Extensions.Hosting.Internal.Host.ForeachService[T](IEnumerable`1 services, CancellationToken token, Boolean concurrent, Boolean abortOnFirstException, List`1 exceptions, Func`3 operation)

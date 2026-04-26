@@ -23,7 +23,10 @@
       "Bash(dotnet add:*)",
       "Bash(dotnet test:*)",
       "Bash(npx vitest:*)",
-      "Bash(find /Users/dinhtanloc/Projects/MGSPlus/src/agents -type f -name \"*.py\" -exec grep -l \"TODO\\\\|FIXME\\\\|STUB\\\\|placeholder\\\\|XXX\" {} \\\\;)"
+      "Bash(find /Users/dinhtanloc/Projects/MGSPlus/src/agents -type f -name \"*.py\" -exec grep -l \"TODO\\\\|FIXME\\\\|STUB\\\\|placeholder\\\\|XXX\" {} \\\\;)",
+      "Bash(dotnet build *)",
+      "Bash(dotnet ef *)",
+      "Bash(docker compose *)"
     ]
   }
 }

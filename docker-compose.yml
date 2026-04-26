@@ -1,20 +1,18 @@
 # MGSPlus — Docker Compose (all services)
 #
-# Single env source: ../.env  (project root)
+# Single env source: .env  (project root) — read automatically by Docker Compose.
 # Run from project root:
-#   docker compose -f infra/docker-compose.yml up
-# Or from infra/ dir:
-#   docker compose up
+#   docker compose up -d
 #
 # Selective start:
-#   docker compose -f infra/docker-compose.yml up sqlserver qdrant neo4j
+#   docker compose up -d sqlserver qdrant neo4j
 
 name: ${COMPOSE_PROJECT_NAME:-mgsplus}
 
 # ── Shared config ──────────────────────────────────────────────────────────────
 x-env: &env
   env_file:
-    - ../.env                # ← project root .env (single source of truth)
+    - .env                     # ← project root .env (single source of truth)
 
 x-restart: &restart
   restart: unless-stopped
@@ -45,16 +43,12 @@ services:
 
   # ── SQL Server ────────────────────────────────────────────────────────────────
   sqlserver:
+    platform: linux/amd64
     build:
-      context: docker/services/sqlserver
+      context: infra/docker/services/sqlserver
       dockerfile: Dockerfile
     image: ${COMPOSE_PROJECT_NAME:-mgsplus}-sqlserver:latest
     <<: [*env, *restart, *logging]
-    environment:
-      # Runtime secrets from env_file above
-      ACCEPT_EULA: ${ACCEPT_EULA:-Y}
-      MSSQL_SA_PASSWORD: ${SA_PASSWORD}
-      SA_PASSWORD: ${SA_PASSWORD}
     ports:
       - "${SQLSERVER_PORT:-1433}:1433"
     volumes:
@@ -62,7 +56,8 @@ services:
     networks:
       - mgs-net
     healthcheck:
-      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"${SA_PASSWORD}\" -C -Q 'SELECT 1' -b -o /dev/null"]
+      # $$VAR → $VAR inside container shell → resolved at runtime from container env
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S 127.0.0.1 -U sa -P \"$$SA_PASSWORD\" -C -Q 'SELECT 1' -b -o /dev/null"]
       interval: 30s
       timeout: 15s
       start_period: 60s
@@ -71,14 +66,10 @@ services:
   # ── Qdrant ────────────────────────────────────────────────────────────────────
   qdrant:
     build:
-      context: docker/services/qdrant
+      context: infra/docker/services/qdrant
       dockerfile: Dockerfile
     image: ${COMPOSE_PROJECT_NAME:-mgsplus}-qdrant:latest
     <<: [*env, *restart, *logging]
-    environment:
-      # Qdrant reads API key from these env vars at runtime
-      QDRANT__SERVICE__API_KEY: ${QDRANT_API_KEY}
-      QDRANT__SERVICE__READ_ONLY_API_KEY: ${QDRANT_READ_ONLY_API_KEY}
     ports:
       - "${QDRANT_PORT:-6333}:6333"
       - "${QDRANT_GRPC_PORT:-6334}:6334"
@@ -96,13 +87,10 @@ services:
   # ── Neo4j ─────────────────────────────────────────────────────────────────────
   neo4j:
     build:
-      context: docker/services/neo4j
+      context: infra/docker/services/neo4j
       dockerfile: Dockerfile
     image: ${COMPOSE_PROJECT_NAME:-mgsplus}-neo4j:latest
     <<: [*env, *restart, *logging]
-    environment:
-      # Construct NEO4J_AUTH from env vars at runtime
-      NEO4J_AUTH: ${NEO4J_USER:-neo4j}/${NEO4J_PASSWORD}
     ports:
       - "${NEO4J_HTTP_PORT:-7474}:7474"
       - "${NEO4J_BOLT_PORT:-7687}:7687"
@@ -121,25 +109,25 @@ services:
   # ── Backend (ASP.NET Core) ────────────────────────────────────────────────────
   backend:
     build:
-      context: ../src/backend
+      context: src/backend
       dockerfile: Dockerfile
     image: ${COMPOSE_PROJECT_NAME:-mgsplus}-backend:latest
     <<: [*env, *restart, *logging]
     environment:
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
-      ASPNETCORE_URLS: http://+:5000
+      ASPNETCORE_URLS: http://+:${BACKEND_PORT:-5001}
       SQLSERVER_HOST: sqlserver          # use docker service name inside network
       QDRANT_HOST: qdrant
       NEO4J_URI: bolt://neo4j:7687
     ports:
-      - "${BACKEND_PORT:-5000}:5000"
+      - "${BACKEND_PORT:-5001}:${BACKEND_PORT:-5001}"
     networks:
       - mgs-net
     depends_on:
       sqlserver:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:5000/health || exit 1"]
+      test: ["CMD-SHELL", "wget -qO- http://localhost:${BACKEND_PORT:-5001}/health || exit 1"]
       interval: 30s
       timeout: 10s
       start_period: 30s
@@ -148,7 +136,7 @@ services:
   # ── Supervisor Agent ──────────────────────────────────────────────────────────
   agents-supervisor:
     build:
-      context: ..                         # project root
+      context: .
       dockerfile: infra/docker/services/agents/Dockerfile
       args:
         AGENT: supervisor
@@ -178,7 +166,7 @@ services:
   # ── Documents Agent ───────────────────────────────────────────────────────────
   agents-documents:
     build:
-      context: ..
+      context: .
       dockerfile: infra/docker/services/agents/Dockerfile
       args:
         AGENT: documents
@@ -205,7 +193,7 @@ services:
   # ── Workflow Agent ────────────────────────────────────────────────────────────
   agents-workflow:
     build:
-      context: ..
+      context: .
       dockerfile: infra/docker/services/agents/Dockerfile
       args:
         AGENT: workflow
@@ -232,7 +220,7 @@ services:
     image: prom/prometheus:v2.52.0
     <<: [*restart, *logging]
     volumes:
-      - ./docker/services/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./infra/docker/services/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus-data:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
@@ -249,7 +237,7 @@ services:
     image: grafana/grafana:10.4.3
     <<: [*restart, *logging]
     environment:
-      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: admin
       GF_USERS_ALLOW_SIGN_UP: "false"
     volumes:
       - grafana-data:/var/lib/grafana
@@ -263,7 +251,7 @@ services:
   # ── MCP Wikipedia Server ─────────────────────────────────────────────────────
   mcp-wiki:
     build:
-      context: ..
+      context: .
       dockerfile: infra/docker/services/agents/Dockerfile
       args:
         AGENT: mcp_wiki
@@ -287,16 +275,16 @@ services:
   # ── Frontend (Nginx) ──────────────────────────────────────────────────────────
   frontend:
     build:
-      context: ..
+      context: .
       dockerfile: infra/docker/services/frontend/Dockerfile
       args:
         VITE_API_BASE_URL: ${VITE_API_BASE_URL:-/api}
-        VITE_BACKEND_URL: ${VITE_BACKEND_URL:-http://localhost:5000}
-        VITE_WS_URL: ${VITE_WS_URL:-ws://localhost:5000}
+        VITE_BACKEND_URL: ${VITE_BACKEND_URL:-http://localhost:5001}
+        VITE_WS_URL: ${VITE_WS_URL:-ws://localhost:5001}
     image: ${COMPOSE_PROJECT_NAME:-mgsplus}-frontend:latest
     <<: [*restart, *logging]
     ports:
-      - "${FRONTEND_PORT:-3000}:80"
+      - "${FRONTEND_PORT:-5173}:80"
     networks:
       - mgs-net
     depends_on:

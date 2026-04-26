@@ -20,6 +20,10 @@ public class ApplicationDbContext : DbContext
     public DbSet<MedicalRecord> MedicalRecords => Set<MedicalRecord>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<DoctorSchedule> DoctorSchedules => Set<DoctorSchedule>();
+    public DbSet<DirectChatSession> DirectChatSessions => Set<DirectChatSession>();
+    public DbSet<DirectMessage> DirectMessages => Set<DirectMessage>();
+    public DbSet<Prescription> Prescriptions => Set<Prescription>();
+    public DbSet<DoctorReview> DoctorReviews => Set<DoctorReview>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -49,7 +53,12 @@ public class ApplicationDbContext : DbContext
              .WithMany()
              .HasForeignKey(d => d.UserId)
              .OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(d => d.ReviewedBy)
+             .WithMany()
+             .HasForeignKey(d => d.ReviewedByUserId)
+             .OnDelete(DeleteBehavior.SetNull);
             e.Property(d => d.ConsultationFee).HasColumnType("decimal(18,2)");
+            e.Property(d => d.ApplicationStatus).HasDefaultValue("Pending");
         });
 
         // Appointment
@@ -150,12 +159,69 @@ public class ApplicationDbContext : DbContext
              .OnDelete(DeleteBehavior.Cascade);
         });
 
+        // DirectChatSession
+        modelBuilder.Entity<DirectChatSession>(e =>
+        {
+            e.HasIndex(s => new { s.PatientId, s.DoctorId }).IsUnique();
+            e.HasOne(s => s.Patient)
+             .WithMany()
+             .HasForeignKey(s => s.PatientId)
+             .OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(s => s.Doctor)
+             .WithMany()
+             .HasForeignKey(s => s.DoctorId)
+             .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // DirectMessage
+        modelBuilder.Entity<DirectMessage>(e =>
+        {
+            e.HasOne(m => m.Session)
+             .WithMany(s => s.Messages)
+             .HasForeignKey(m => m.SessionId)
+             .OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(m => m.Sender)
+             .WithMany()
+             .HasForeignKey(m => m.SenderId)
+             .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // Prescription
+        modelBuilder.Entity<Prescription>(e =>
+        {
+            e.HasOne(p => p.User)
+             .WithMany()
+             .HasForeignKey(p => p.UserId)
+             .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // DoctorReview — one review per appointment
+        modelBuilder.Entity<DoctorReview>(e =>
+        {
+            e.HasIndex(r => r.AppointmentId).IsUnique();
+            e.HasOne(r => r.Doctor)
+             .WithMany()
+             .HasForeignKey(r => r.DoctorId)
+             .OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(r => r.User)
+             .WithMany()
+             .HasForeignKey(r => r.UserId)
+             .OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(r => r.Appointment)
+             .WithMany()
+             .HasForeignKey(r => r.AppointmentId)
+             .OnDelete(DeleteBehavior.Restrict);
+        });
+
         // Seed data
         SeedData(modelBuilder);
     }
 
     private static void SeedData(ModelBuilder modelBuilder)
     {
+        // Note: Admin user is NOT seeded here.
+        // It is created at application startup from ADMIN_EMAIL / ADMIN_PASSWORD env vars.
+
         modelBuilder.Entity<BlogCategory>().HasData(
             new BlogCategory { Id = 1, Name = "Sức khỏe tổng quát", Slug = "suc-khoe-tong-quat", CreatedAt = new DateTime(2024, 1, 1) },
             new BlogCategory { Id = 2, Name = "Dinh dưỡng", Slug = "dinh-duong", CreatedAt = new DateTime(2024, 1, 1) },

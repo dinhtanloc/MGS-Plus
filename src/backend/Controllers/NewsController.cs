@@ -147,6 +147,34 @@ public class NewsController : ControllerBase
         return NoContent();
     }
 
+    /// <summary>Admin: list all news including unpublished</summary>
+    [HttpGet("admin")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> AdminGetNews(
+        [FromQuery] string? search,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 15)
+    {
+        var query = _db.News.Include(n => n.Category).AsQueryable();
+
+        if (!string.IsNullOrEmpty(search))
+            query = query.Where(n => n.Title.Contains(search));
+
+        var total = await query.CountAsync();
+        var items = await query
+            .OrderByDescending(n => n.PublishedAt.HasValue ? n.PublishedAt.Value.Ticks : (long)n.Id)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(n => new {
+                n.Id, n.Title, n.Summary, n.ImageUrl, n.Source, n.IsPublished,
+                n.ViewCount, n.PublishedAt, n.UpdatedAt,
+                CategoryName = n.Category == null ? null : n.Category.Name
+            })
+            .ToListAsync();
+
+        return Ok(new { total, page, pageSize, data = items });
+    }
+
     /// <summary>Featured news items (top by view count)</summary>
     [HttpGet("featured")]
     [AllowAnonymous]

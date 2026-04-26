@@ -11,6 +11,7 @@ const routes = [
   { path: '/blog/:slug', name: 'blog-detail', component: () => import('@/views/blog/BlogDetailPage.vue') },
   { path: '/services', name: 'services', component: () => import('@/views/home/ServicesPage.vue') },
   { path: '/doctors', name: 'doctors', component: () => import('@/views/appointment/DoctorListPage.vue') },
+  { path: '/doctors/:id', name: 'doctor-profile', component: () => import('@/views/appointment/DoctorProfilePage.vue') },
   {
     path: '/chat',
     name: 'chat',
@@ -54,11 +55,46 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
-    path: '/admin/blog',
-    name: 'admin-blog',
-    component: () => import('@/views/admin/BlogAdminPage.vue'),
-    meta: { requiresAuth: true, requiresRole: 'Admin' }
+    path: '/admin',
+    component: () => import('@/views/admin/AdminLayout.vue'),
+    meta: { requiresAuth: true, requiresRole: 'Admin' },
+    children: [
+      { path: '', name: 'admin-dashboard', component: () => import('@/views/admin/DashboardPage.vue') },
+      { path: 'doctors', name: 'admin-doctors', component: () => import('@/views/admin/DoctorApplicationsPage.vue') },
+      { path: 'users', name: 'admin-users', component: () => import('@/views/admin/UserManagementPage.vue') },
+      { path: 'blog', name: 'admin-blog', component: () => import('@/views/admin/BlogAdminPage.vue') },
+      { path: 'chats', name: 'admin-chats', component: () => import('@/views/admin/ChatHistoryPage.vue') },
+      { path: 'news',  name: 'admin-news',  component: () => import('@/views/admin/NewsAdminPage.vue') },
+    ]
   },
+  // Doctor: appointment management
+  {
+    path: '/doctor/appointments',
+    name: 'doctor-appointments',
+    component: () => import('@/views/appointment/DoctorAppointmentsPage.vue'),
+    meta: { requiresAuth: true, requiresRole: 'Doctor' }
+  },
+  // Direct chat (doctor-patient)
+  {
+    path: '/messages',
+    name: 'direct-chat',
+    component: () => import('@/views/chat/DirectChatPage.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/messages/:sessionId',
+    name: 'direct-chat-session',
+    component: () => import('@/views/chat/DirectChatPage.vue'),
+    meta: { requiresAuth: true }
+  },
+  // Prescription OCR
+  {
+    path: '/prescriptions',
+    name: 'prescriptions',
+    component: () => import('@/views/medical/PrescriptionPage.vue'),
+    meta: { requiresAuth: true }
+  },
+  { path: '/verify-email', name: 'verify-email', component: () => import('@/views/auth/VerifyEmailPage.vue'), meta: { guest: true } },
   { path: '/:pathMatch(.*)*', name: 'not-found', component: () => import('@/views/NotFoundPage.vue') }
 ]
 
@@ -77,6 +113,14 @@ router.beforeEach(async (to, _from, next) => {
 
   if (to.meta.requiresAuth && !auth.isLoggedIn) {
     return next({ name: 'login', query: { redirect: to.fullPath } })
+  }
+  if (to.meta.requiresRole) {
+    const role = auth.user?.role
+    const required = to.meta.requiresRole as string
+    // Admin can access any role-restricted route
+    if (role !== required && role !== 'Admin') {
+      return next({ name: 'home' })
+    }
   }
   if (to.meta.guest && auth.isLoggedIn) {
     return next({ name: 'home' })

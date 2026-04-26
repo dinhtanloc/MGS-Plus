@@ -123,9 +123,14 @@ public class BlogController : ControllerBase
     [Authorize(Roles = "Admin,Doctor")]
     public async Task<IActionResult> UpdatePost(int id, [FromBody] UpdateBlogPostRequest req)
     {
-        var userId = _jwt.GetUserIdFromToken(User);
-        var post = await _db.BlogPosts.FindAsync(id);
+        var userId  = _jwt.GetUserIdFromToken(User);
+        var isAdmin = User.IsInRole("Admin");
+        var post    = await _db.BlogPosts.FindAsync(id);
         if (post == null) return NotFound();
+
+        // Only the author or Admin can edit
+        if (!isAdmin && post.AuthorId != userId)
+            return Forbid();
 
         if (req.Title != null) post.Title = req.Title;
         if (req.Content != null) post.Content = req.Content;

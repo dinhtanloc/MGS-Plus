@@ -7,7 +7,13 @@ public record RegisterRequest(
     [Required, MinLength(8)] string Password,
     [Required, MaxLength(100)] string FirstName,
     [Required, MaxLength(100)] string LastName,
-    string? PhoneNumber
+    string? PhoneNumber,
+    // Doctor application fields (only used when RequestedRole = "Doctor")
+    string? RequestedRole,       // "Patient" | "Doctor"
+    string? Specialty,
+    string? LicenseNumber,
+    string? Bio,
+    decimal? ConsultationFee
 );
 
 public record LoginRequest(

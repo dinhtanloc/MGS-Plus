@@ -7,7 +7,7 @@
 # ── Service ────────────────────────────────────────────────────
 service:
   host: backend
-  port: 5000              # override with BACKEND_PORT
+  port: 5001              # override with BACKEND_PORT
 
 # ── JWT defaults (non-secret) ──────────────────────────────────
 jwt:
@@ -18,6 +18,6 @@ jwt:
 # ── CORS ──────────────────────────────────────────────────────
 cors:
   allowed_origins:
-    - http://localhost:3000   # Vite dev default
-    - http://localhost:5173   # Vite alt port
+    - http://localhost:5173   # Vite dev server (local)
     - http://localhost:4173   # Vite preview
+    - http://localhost:3000   # Docker nginx fallback

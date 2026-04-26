@@ -5,6 +5,11 @@ export interface RegisterRequest {
   firstName: string
   lastName: string
   phoneNumber?: string
+  requestedRole?: 'Patient' | 'Doctor'
+  specialty?: string
+  licenseNumber?: string
+  bio?: string
+  consultationFee?: number
 }
 
 export interface LoginRequest {
@@ -48,6 +53,8 @@ export interface AppointmentDto {
   id: number
   userId: number
   userName: string | null
+  userEmail: string | null
+  userPhone: string | null
   doctorId: number | null
   doctorName: string | null
   doctorSpecialty: string | null
@@ -57,6 +64,51 @@ export interface AppointmentDto {
   notes: string | null
   department: string | null
   queueNumber: number | null
+  rescheduleReason: string | null
+  rescheduledTo: string | null
+  cancelReason: string | null
+  createdAt: string
+}
+
+// ── Direct Chat ───────────────────────────────────────────────────────────────
+export interface DirectChatSessionDto {
+  id: number
+  patientId: number
+  patientName: string
+  patientAvatar: string | null
+  doctorId: number
+  doctorName: string
+  doctorSpecialty: string
+  status: string
+  updatedAt: string
+  unreadCount: number
+}
+
+export interface DirectMessageDto {
+  id: number
+  sessionId: number
+  senderId: number
+  senderName: string
+  content: string
+  sentAt: string
+  isRead: boolean
+}
+
+// ── Prescriptions ─────────────────────────────────────────────────────────────
+export interface MedicationItem {
+  name: string
+  dosage: string | null
+  frequency: string | null
+  duration: string | null
+}
+
+export interface PrescriptionDto {
+  id: number
+  originalFileName: string
+  status: 'Pending' | 'Processed' | 'Failed'
+  rawOcrText: string | null
+  medications: MedicationItem[]
+  errorMessage: string | null
   createdAt: string
 }
 
@@ -184,4 +236,55 @@ export interface PaginatedResponse<T> {
   page: number
   pageSize: number
   data: T[]
+}
+
+// ── Admin ─────────────────────────────────────────────────────────────────────
+export interface AdminStatsDto {
+  totalUsers: number
+  totalDoctors: number
+  totalPatients: number
+  pendingDoctors: number
+  totalAppointments: number
+  totalBlogPosts: number
+  totalNews: number
+  appointmentsThisMonth: number
+  appointmentsByMonth: MonthlyStatDto[]
+}
+
+export interface MonthlyStatDto {
+  year: number
+  month: number
+  count: number
+}
+
+export interface DoctorApplicationDto {
+  doctorId: number
+  userId: number
+  fullName: string
+  email: string
+  specialty: string
+  licenseNumber: string
+  bio: string | null
+  consultationFee: number
+  applicationStatus: string
+  rejectionReason: string | null
+  createdAt: string
+}
+
+export interface AdminUserDto {
+  id: number
+  email: string
+  firstName: string
+  lastName: string
+  role: string
+  isActive: boolean
+  isEmailVerified: boolean
+  createdAt: string
+}
+
+export interface AdminUsersResponse {
+  total: number
+  page: number
+  pageSize: number
+  data: AdminUserDto[]
 }

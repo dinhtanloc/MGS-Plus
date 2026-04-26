@@ -14,7 +14,7 @@ graph TD
         SPA[SPA — ChatbotWidget, Auth, Appointments, Records]
     end
 
-    subgraph Backend["Backend  (ASP.NET Core, port 5000)"]
+    subgraph Backend["Backend  (ASP.NET Core, port 5001)"]
         API[REST API]
         Auth[Auth / JWT]
         Chatbot[ChatbotService]
@@ -62,8 +62,8 @@ MGSPlus/
 │   ├── backend-config.yml
 │   ├── frontend-config.yml
 │   └── infra-config.yml
+├── docker-compose.yml    # Docker Compose orchestration (all services)
 ├── infra/
-│   ├── docker-compose.yml
 │   └── docker/services/  # Per-service Dockerfiles
 ├── src/
 │   ├── agents/           # Python multi-agent service (FastAPI + CrewAI)
@@ -97,14 +97,14 @@ cp .env.example .env
 ### 2. Start infrastructure services first
 
 ```bash
-docker compose -f infra/docker-compose.yml up -d sqlserver qdrant neo4j
+docker compose up -d sqlserver qdrant neo4j
 # Wait ~60 s for SQL Server to be healthy
 ```
 
 ### 3. Start all application services
 
 ```bash
-docker compose -f infra/docker-compose.yml up -d
+docker compose up -d
 ```
 
 ### 4. Open the application
@@ -112,8 +112,8 @@ docker compose -f infra/docker-compose.yml up -d
 | Service | URL |
 |---------|-----|
 | Frontend | http://localhost:3000 |
-| Backend API | http://localhost:5000 |
-| Swagger UI | http://localhost:5000/swagger |
+| Backend API | http://localhost:5001 |
+| Swagger UI | http://localhost:5001/swagger |
 | Supervisor Agent | http://localhost:8010/docs |
 | Documents Agent | http://localhost:8011/docs |
 | Workflow Agent | http://localhost:8012/docs |
@@ -123,9 +123,9 @@ docker compose -f infra/docker-compose.yml up -d
 ### 5. Stop everything
 
 ```bash
-docker compose -f infra/docker-compose.yml down
+docker compose down
 # Include -v to also remove persistent volumes (all data)
-docker compose -f infra/docker-compose.yml down -v
+docker compose down -v
 ```
 
 ---
@@ -137,7 +137,7 @@ docker compose -f infra/docker-compose.yml down -v
 ```bash
 cd src/backend
 dotnet run
-# API available at http://localhost:5000
+# API available at http://localhost:5001
 ```
 
 Run backend tests:
@@ -255,7 +255,7 @@ Environment variables always take priority over YAML values at runtime.
 - [src/agents/README.md](src/agents/README.md) — multi-agent architecture, agent roles, memory system, A2A protocol
 - [src/backend/README.md](src/backend/README.md) — REST API endpoints, auth flow, EF Core models
 - [src/frontend/README.md](src/frontend/README.md) — SPA structure, stores, chatbot widget
-- [infra/README.md](infra/README.md) — Docker Compose services, volumes, health checks
+- [infra/README.md](infra/README.md) — Docker services, Dockerfiles, volumes, health checks
 
 ---
 

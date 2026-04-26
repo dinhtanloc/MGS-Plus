@@ -44,25 +44,95 @@
               <p class="font-semibold text-gray-900">{{ formatDateTime(apt.scheduledAt) }}</p>
               <p v-if="apt.doctorName" class="text-sm text-gray-500">BS. {{ apt.doctorName }} • {{ apt.doctorSpecialty }}</p>
               <p v-if="apt.description" class="text-sm text-gray-400 mt-1">{{ apt.description }}</p>
+              <!-- Reschedule notice -->
+              <p v-if="apt.status === 'Rescheduled' && apt.rescheduledTo"
+                class="text-xs text-orange-600 mt-1 font-medium">
+                Đổi lịch → {{ formatDateTime(apt.rescheduledTo) }}
+                <span v-if="apt.rescheduleReason">· {{ apt.rescheduleReason }}</span>
+              </p>
             </div>
           </div>
-          <div class="flex gap-2 shrink-0">
+          <div class="flex flex-col gap-2 shrink-0 items-end">
             <button v-if="apt.status === 'Pending'" @click="cancelAppointment(apt.id)"
               class="btn-danger text-xs py-1.5 px-3">Hủy</button>
+            <!-- Review button for completed appointments with a doctor -->
+            <button v-if="apt.status === 'Completed' && apt.doctorId && !reviewedIds.has(apt.id)"
+              @click="openReview(apt)"
+              class="text-xs px-3 py-1.5 rounded-lg bg-yellow-50 text-yellow-700 hover:bg-yellow-100 transition-colors font-medium flex items-center gap-1">
+              <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+              </svg>
+              Đánh giá
+            </button>
+            <span v-else-if="apt.status === 'Completed' && apt.doctorId && reviewedIds.has(apt.id)"
+              class="text-xs text-green-600 flex items-center gap-1">
+              <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+              </svg>
+              Đã đánh giá
+            </span>
           </div>
         </div>
       </div>
     </div>
+
+    <!-- Review modal -->
+    <Teleport to="body">
+      <div v-if="reviewTarget" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
+          <h3 class="font-bold text-gray-900 text-lg mb-1">Đánh giá bác sĩ</h3>
+          <p class="text-sm text-gray-500 mb-5">BS. {{ reviewTarget.doctorName }} · {{ formatDateTime(reviewTarget.scheduledAt) }}</p>
+
+          <!-- Stars -->
+          <div class="mb-4">
+            <p class="text-sm font-medium text-gray-700 mb-2">Chất lượng khám bệnh</p>
+            <div class="flex gap-1">
+              <button v-for="i in 5" :key="i" @click="reviewForm.rating = i"
+                class="transition-transform hover:scale-110">
+                <svg class="w-8 h-8" :class="i <= reviewForm.rating ? 'text-yellow-400' : 'text-gray-200'"
+                  fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                </svg>
+              </button>
+            </div>
+            <p class="text-xs text-gray-400 mt-1">{{ ratingLabel }}</p>
+          </div>
+
+          <div class="mb-5">
+            <label class="text-sm font-medium text-gray-700 mb-1.5 block">Nhận xét <span class="text-gray-400 font-normal">(tùy chọn)</span></label>
+            <textarea v-model="reviewForm.comment" rows="3"
+              class="input-field resize-none"
+              placeholder="Chia sẻ trải nghiệm của bạn..."></textarea>
+          </div>
+
+          <div class="flex gap-3 justify-end">
+            <button @click="reviewTarget = null" class="text-sm text-gray-600 px-4 py-2 rounded-xl hover:bg-gray-100">Bỏ qua</button>
+            <button @click="submitReview" :disabled="reviewForm.rating === 0 || reviewLoading"
+              class="btn-primary disabled:opacity-50">
+              {{ reviewLoading ? 'Đang gửi...' : 'Gửi đánh giá' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { appointmentApi } from '@/services/api'
+import { useToastStore } from '@/stores/toast'
 
+const toast = useToastStore()
 const appointments = ref<any[]>([])
 const loading = ref(true)
 const activeFilter = ref('')
+const reviewedIds = ref<Set<number>>(new Set())
+
+// Review
+const reviewTarget = ref<any>(null)
+const reviewLoading = ref(false)
+const reviewForm = ref({ rating: 0, comment: '' })
 
 const filters = [
   { label: 'Tất cả', value: '' },
@@ -72,10 +142,15 @@ const filters = [
   { label: 'Đã hủy', value: 'Cancelled' }
 ]
 
+const ratingLabel = computed(() => {
+  const map = ['', 'Tệ', 'Không hài lòng', 'Bình thường', 'Tốt', 'Xuất sắc']
+  return map[reviewForm.value.rating] ?? ''
+})
+
 function statusBadge(status: string) {
   const map: Record<string, string> = {
     Pending: 'badge-warning', Confirmed: 'badge-success',
-    Completed: 'badge-info', Cancelled: 'badge-danger'
+    Completed: 'badge-info', Cancelled: 'badge-danger', Rescheduled: 'badge-warning'
   }
   return map[status] || 'badge-info'
 }
@@ -83,13 +158,13 @@ function statusBadge(status: string) {
 function statusLabel(status: string) {
   const map: Record<string, string> = {
     Pending: 'Chờ xác nhận', Confirmed: 'Đã xác nhận',
-    Completed: 'Hoàn thành', Cancelled: 'Đã hủy'
+    Completed: 'Hoàn thành', Cancelled: 'Đã hủy', Rescheduled: 'Đã đổi lịch'
   }
   return map[status] || status
 }
 
 function formatDateTime(dt: string) {
-  return new Date(dt).toLocaleString('vi-VN', { weekday: 'long', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
+  return new Date(dt).toLocaleString('vi-VN', { weekday: 'short', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
 }
 
 async function loadAppointments() {
@@ -97,6 +172,15 @@ async function loadAppointments() {
   try {
     const { data } = await appointmentApi.list({ status: activeFilter.value || undefined })
     appointments.value = data.data || []
+
+    // Check which completed appointments are already reviewed
+    const completed = appointments.value.filter(a => a.status === 'Completed' && a.doctorId)
+    await Promise.all(completed.map(async a => {
+      try {
+        const { data: res } = await appointmentApi.checkReview(a.doctorId, a.id)
+        if (res.reviewed) reviewedIds.value.add(a.id)
+      } catch { /* ignore */ }
+    }))
   } catch { appointments.value = [] }
   finally { loading.value = false }
 }
@@ -105,6 +189,30 @@ async function cancelAppointment(id: number) {
   if (!confirm('Bạn có chắc muốn hủy lịch hẹn này?')) return
   await appointmentApi.update(id, { status: 'Cancelled' })
   await loadAppointments()
+}
+
+function openReview(apt: any) {
+  reviewTarget.value = apt
+  reviewForm.value = { rating: 0, comment: '' }
+}
+
+async function submitReview() {
+  if (!reviewTarget.value || reviewForm.value.rating === 0) return
+  reviewLoading.value = true
+  try {
+    await appointmentApi.submitReview(reviewTarget.value.doctorId, {
+      appointmentId: reviewTarget.value.id,
+      rating: reviewForm.value.rating,
+      comment: reviewForm.value.comment || undefined
+    })
+    reviewedIds.value.add(reviewTarget.value.id)
+    reviewTarget.value = null
+    toast.success('Cảm ơn bạn đã đánh giá!')
+  } catch (e: any) {
+    toast.error(e.response?.data?.message || 'Gửi đánh giá thất bại')
+  } finally {
+    reviewLoading.value = false
+  }
 }
 
 onMounted(loadAppointments)

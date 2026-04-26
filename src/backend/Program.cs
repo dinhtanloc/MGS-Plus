@@ -1,12 +1,14 @@
 using System.Text;
 using System.Threading.RateLimiting;
 using DotNetEnv;
+using MGSPlus.Api;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using MGSPlus.Api.Data;
+using MGSPlus.Api.Hubs;
 using MGSPlus.Api.Middleware;
 using MGSPlus.Api.Services;
 using Prometheus;
@@ -59,8 +61,10 @@ builder.Host.UseSerilog((ctx, services, cfg) => cfg
         outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level:u3}] {Message:lj}{NewLine}{Exception}"));
 
 // ── Configuration ────────────────────────────────────────────────────────────
+// Non-secret defaults come from configs/*.yml; secrets from .env only.
+// Priority: env var > YAML > hardcoded fallback.
 
-// 1.1 — Fail-fast: JWT_SECRET must be set and at least 32 chars
+// 1.1 — Fail-fast: JWT_SECRET must be set and at least 32 chars (secret → .env only)
 var jwtSecret = Environment.GetEnvironmentVariable("JWT_SECRET")
     ?? builder.Configuration["Jwt:Secret"];
 
@@ -72,37 +76,47 @@ if (jwtSecret.Length < 32)
     throw new InvalidOperationException(
         $"JWT_SECRET must be at least 32 characters (current: {jwtSecret.Length}).");
 
-var jwtIssuer   = Environment.GetEnvironmentVariable("JWT_ISSUER")   ?? builder.Configuration["Jwt:Issuer"]   ?? "MGSPlus";
-var jwtAudience = Environment.GetEnvironmentVariable("JWT_AUDIENCE")  ?? builder.Configuration["Jwt:Audience"] ?? "MGSPlusApp";
+// JWT non-secret defaults → backend-config.yml
+var jwtIssuer   = YamlConfig.Get("JWT_ISSUER",          "backend-config.yml", "jwt.issuer",          "MGSPlus");
+var jwtAudience = YamlConfig.Get("JWT_AUDIENCE",         "backend-config.yml", "jwt.audience",        "MGSPlusApp");
+var jwtExpires  = YamlConfig.Get("JWT_EXPIRES_MINUTES",  "backend-config.yml", "jwt.expires_minutes", "60");
 
 builder.Configuration["Jwt:Secret"]         = jwtSecret;
 builder.Configuration["Jwt:Issuer"]         = jwtIssuer;
 builder.Configuration["Jwt:Audience"]       = jwtAudience;
-builder.Configuration["Jwt:ExpiresMinutes"] = Environment.GetEnvironmentVariable("JWT_EXPIRES_MINUTES") ?? "60";
+builder.Configuration["Jwt:ExpiresMinutes"] = jwtExpires;
 
 // ── SQL Server ────────────────────────────────────────────────────────────────
-var sqlHost = Environment.GetEnvironmentVariable("SQLSERVER_HOST") ?? "localhost";
-var sqlPort = Environment.GetEnvironmentVariable("SQLSERVER_PORT") ?? "1433";
-var sqlUser = Environment.GetEnvironmentVariable("SQL_ADMIN_USER") ?? "sa";
+// Host/port/db → infra-config.yml; password → .env (secret)
+var sqlHost = YamlConfig.Get("SQLSERVER_HOST", "infra-config.yml", "databases.sqlserver.host", "localhost");
+var sqlPort = YamlConfig.Get("SQLSERVER_PORT", "infra-config.yml", "databases.sqlserver.port", "1433");
+var sqlUser = YamlConfig.Get("SQL_ADMIN_USER", "infra-config.yml", "databases.sqlserver.user", "sa");
+var sqlDb   = YamlConfig.Get("SQLSERVER_DB",   "infra-config.yml", "databases.sqlserver.name", "mgsplus_db");
 var sqlPass = Environment.GetEnvironmentVariable("SA_PASSWORD")
     ?? throw new InvalidOperationException(
         "SA_PASSWORD environment variable is required. Set it in your .env file.");
-var sqlDb   = Environment.GetEnvironmentVariable("SQLSERVER_DB")   ?? "mgsplus_db";
 var connStr = $"Server={sqlHost},{sqlPort};Database={sqlDb};User Id={sqlUser};Password={sqlPass};TrustServerCertificate=True;";
 
-// SMTP configuration
+// ── App URLs ──────────────────────────────────────────────────────────────────
+var backendPort  = YamlConfig.Get("BACKEND_PORT",  "backend-config.yml",  "service.port",  "5001");
+var frontendPort = YamlConfig.Get("FRONTEND_PORT", "frontend-config.yml", "service.port",  "3000");
+builder.Configuration["App:BaseUrl"]     = Environment.GetEnvironmentVariable("APP_BASE_URL")
+    ?? $"http://localhost:{backendPort}";
+builder.Configuration["App:FrontendUrl"] = Environment.GetEnvironmentVariable("APP_FRONTEND_URL")
+    ?? $"http://localhost:{frontendPort}";
+
+// ── SMTP (secrets → .env) ─────────────────────────────────────────────────────
 builder.Configuration["Smtp:Host"] = Environment.GetEnvironmentVariable("SMTP_HOST") ?? "";
 builder.Configuration["Smtp:Port"] = Environment.GetEnvironmentVariable("SMTP_PORT") ?? "587";
 builder.Configuration["Smtp:User"] = Environment.GetEnvironmentVariable("SMTP_USER") ?? "";
 builder.Configuration["Smtp:Pass"] = Environment.GetEnvironmentVariable("SMTP_PASS") ?? "";
 builder.Configuration["Smtp:From"] = Environment.GetEnvironmentVariable("SMTP_FROM") ?? "";
-builder.Configuration["App:BaseUrl"] = Environment.GetEnvironmentVariable("APP_BASE_URL") ?? "http://localhost:5000";
 
-// Agent service
-var agentApiKey = Environment.GetEnvironmentVariable("AGENT_API_KEY") ?? "";
-builder.Configuration["AgentService:SupervisorUrl"] =
-    $"http://localhost:{Environment.GetEnvironmentVariable("SUPERVISOR_PORT") ?? "8010"}";
-builder.Configuration["AgentService:ApiKey"] = agentApiKey;
+// ── Agent service → agents-config.yml ────────────────────────────────────────
+var supervisorPort = YamlConfig.Get("SUPERVISOR_PORT", "agents-config.yml", "services.supervisor.port", "8010");
+var agentApiKey    = Environment.GetEnvironmentVariable("AGENT_API_KEY") ?? "";
+builder.Configuration["AgentService:SupervisorUrl"] = $"http://localhost:{supervisorPort}";
+builder.Configuration["AgentService:ApiKey"]        = agentApiKey;
 
 // ── Services ─────────────────────────────────────────────────────────────────
 builder.Services.AddDbContext<ApplicationDbContext>(opt =>
@@ -111,6 +125,8 @@ builder.Services.AddDbContext<ApplicationDbContext>(opt =>
 builder.Services.AddScoped<JwtService>();
 builder.Services.AddScoped<ChatbotService>();
 builder.Services.AddScoped<EmailService>();
+builder.Services.AddScoped<OcrService>();
+builder.Services.AddSignalR();
 
 // 1.2 — ProblemDetails (RFC 7807 structured errors)
 builder.Services.AddProblemDetails();
@@ -141,6 +157,18 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidIssuer              = jwtIssuer,
             ValidAudience            = jwtAudience,
             IssuerSigningKey         = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret))
+        };
+        // Allow SignalR to receive JWT from query string (WebSocket doesn't support headers)
+        opt.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = ctx =>
+            {
+                var token = ctx.Request.Query["access_token"];
+                if (!string.IsNullOrEmpty(token) &&
+                    ctx.HttpContext.Request.Path.StartsWithSegments("/hubs"))
+                    ctx.Token = token;
+                return Task.CompletedTask;
+            }
         };
     });
 
@@ -183,13 +211,16 @@ builder.Services.AddCors(opt =>
 {
     opt.AddPolicy("AllowFrontend", p =>
     {
-        var origins = new[]
-        {
-            "http://localhost:3000",
-            "http://localhost:5173",
-            "http://localhost:4173",
-            Environment.GetEnvironmentVariable("FRONTEND_ORIGIN") ?? "http://localhost:3000"
-        }.Distinct().ToArray();
+        // CORS origins → backend-config.yml; env var adds an extra origin if needed
+        var yamlOrigins = YamlConfig.GetList("backend-config.yml", "cors.allowed_origins");
+        var extraOrigin = Environment.GetEnvironmentVariable("FRONTEND_ORIGIN");
+        var origins = yamlOrigins
+            .Concat(extraOrigin is not null ? [extraOrigin] : [])
+            .Distinct()
+            .ToArray();
+
+        if (origins.Length == 0)
+            origins = ["http://localhost:3000"];
 
         p.WithOrigins(origins)
          .AllowAnyHeader()
@@ -201,20 +232,41 @@ builder.Services.AddCors(opt =>
 // ── Build & Configure ─────────────────────────────────────────────────────────
 var app = builder.Build();
 
-// Auto-migrate on startup (dev only)
-if (app.Environment.IsDevelopment())
+// Auto-migrate + seed admin on startup
+try
 {
-    try
+    using var scope = app.Services.CreateScope();
+    var db     = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+
+    db.Database.Migrate();
+
+    // Create admin from env vars if no admin exists yet
+    var adminEmail    = Environment.GetEnvironmentVariable("ADMIN_EMAIL")    ?? "admin@mgsplus.vn";
+    var adminPassword = Environment.GetEnvironmentVariable("ADMIN_PASSWORD") ?? "";
+
+    if (!string.IsNullOrWhiteSpace(adminPassword) && !db.Users.Any(u => u.Role == "Admin"))
     {
-        using var scope = app.Services.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-        db.Database.Migrate();
+        db.Users.Add(new MGSPlus.Api.Models.User
+        {
+            Email           = adminEmail,
+            PasswordHash    = BCrypt.Net.BCrypt.HashPassword(adminPassword),
+            FirstName       = "System",
+            LastName        = "Admin",
+            Role            = "Admin",
+            IsActive        = true,
+            IsEmailVerified = true,
+            CreatedAt       = DateTime.UtcNow,
+            UpdatedAt       = DateTime.UtcNow
+        });
+        db.SaveChanges();
+        logger.LogInformation("Admin account created: {Email}", adminEmail);
     }
-    catch (Exception ex)
-    {
-        var logger = app.Services.GetRequiredService<ILogger<Program>>();
-        logger.LogWarning("DB migration skipped — database not reachable: {Message}", ex.Message);
-    }
+}
+catch (Exception ex)
+{
+    var logger = app.Services.GetRequiredService<ILogger<Program>>();
+    logger.LogWarning("DB startup skipped — database not reachable: {Message}", ex.Message);
 }
 
 // Serilog request logging (before exception handler so failed reqs are logged)
@@ -239,6 +291,7 @@ app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+app.MapHub<DirectChatHub>("/hubs/direct-chat");
 
 // Prometheus metrics endpoint (scrape at /metrics)
 app.UseHttpMetrics();

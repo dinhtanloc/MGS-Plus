@@ -17,21 +17,41 @@ public class AuthController : ControllerBase
     private readonly JwtService _jwt;
     private readonly IConfiguration _config;
 
-    public AuthController(ApplicationDbContext db, JwtService jwt, IConfiguration config)
+    private readonly EmailService _email;
+
+    public AuthController(ApplicationDbContext db, JwtService jwt, IConfiguration config, EmailService email)
     {
         _db     = db;
         _jwt    = jwt;
         _config = config;
+        _email  = email;
     }
 
-    /// <summary>Register a new account</summary>
+    /// <summary>Register a new account (Patient or Doctor application)</summary>
     [HttpPost("register")]
     [ProducesResponseType(typeof(AuthResponse), 201)]
     [ProducesResponseType(400)]
     public async Task<IActionResult> Register([FromBody] RegisterRequest req)
     {
+        var errors = new Dictionary<string, string>();
+
         if (await _db.Users.AnyAsync(u => u.Email == req.Email))
-            return BadRequest(new { message = "Email đã được sử dụng" });
+            errors["email"] = "Email này đã được đăng ký. Vui lòng sử dụng email khác.";
+
+        var requestedRole = req.RequestedRole ?? "Patient";
+
+        if (requestedRole == "Doctor")
+        {
+            if (string.IsNullOrWhiteSpace(req.Specialty))
+                errors["specialty"] = "Vui lòng chọn chuyên khoa";
+            if (string.IsNullOrWhiteSpace(req.LicenseNumber))
+                errors["licenseNumber"] = "Vui lòng nhập số giấy phép hành nghề";
+            else if (await _db.Doctors.AnyAsync(d => d.LicenseNumber == req.LicenseNumber))
+                errors["licenseNumber"] = "Số giấy phép này đã được đăng ký";
+        }
+
+        if (errors.Count > 0)
+            return BadRequest(new { message = "Vui lòng kiểm tra lại thông tin", errors });
 
         var user = new User
         {
@@ -40,20 +60,51 @@ public class AuthController : ControllerBase
             FirstName    = req.FirstName,
             LastName     = req.LastName,
             PhoneNumber  = req.PhoneNumber,
-            Role         = "Patient"
+            Role         = "Patient" // always starts as Patient; promoted to Doctor after admin approval
         };
 
         _db.Users.Add(user);
         await _db.SaveChangesAsync();
 
         _db.UserProfiles.Add(new UserProfile { UserId = user.Id });
+
+        bool pendingDoctor = false;
+        if (requestedRole == "Doctor")
+        {
+            _db.Doctors.Add(new Models.Doctor
+            {
+                UserId            = user.Id,
+                Specialty         = req.Specialty!,
+                LicenseNumber     = req.LicenseNumber!,
+                Bio               = req.Bio,
+                ConsultationFee   = req.ConsultationFee ?? 0,
+                ApplicationStatus = "Pending",
+                IsAvailable       = false // not available until approved
+            });
+            pendingDoctor = true;
+        }
+
         await _db.SaveChangesAsync();
 
         var (token, refreshToken) = await IssueTokenPairAsync(user);
         var expiresMinutes = int.Parse(_config["Jwt:ExpiresMinutes"] ?? "60");
 
-        return CreatedAtAction(nameof(Register), new AuthResponse(
-            token, "Bearer", expiresMinutes * 60, ToDto(user), refreshToken));
+        // Fire-and-forget: send verification email without blocking registration
+        _ = Task.Run(async () =>
+        {
+            try { await _email.SendVerificationEmailAsync(user); }
+            catch { /* swallow — email failure must not break registration */ }
+        });
+
+        return CreatedAtAction(nameof(Register), new
+        {
+            token,
+            tokenType    = "Bearer",
+            expiresIn    = expiresMinutes * 60,
+            user         = ToDto(user),
+            refreshToken,
+            pendingDoctor // frontend uses this to show "awaiting approval" message
+        });
     }
 
     /// <summary>Login</summary>
@@ -62,12 +113,19 @@ public class AuthController : ControllerBase
     [ProducesResponseType(401)]
     public async Task<IActionResult> Login([FromBody] LoginRequest req)
     {
+        var errors = new Dictionary<string, string>();
         var user = await _db.Users.FirstOrDefaultAsync(u => u.Email == req.Email);
-        if (user == null || !BCrypt.Net.BCrypt.Verify(req.Password, user.PasswordHash))
-            return Unauthorized(new { message = "Email hoặc mật khẩu không đúng" });
+        
+        if (user == null)
+            errors["email"] = "Email không tồn tại trong hệ thống";
+        else if (!BCrypt.Net.BCrypt.Verify(req.Password, user.PasswordHash))
+            errors["password"] = "Mật khẩu không chính xác";
+        
+        if (errors.Count > 0)
+            return Unauthorized(new { message = "Đăng nhập thất bại", errors });
 
         if (!user.IsActive)
-            return Unauthorized(new { message = "Tài khoản đã bị khóa" });
+            return Unauthorized(new { message = "Tài khoản đã bị khóa", errors = new Dictionary<string, string>() });
 
         var (token, refreshToken) = await IssueTokenPairAsync(user);
         var expiresMinutes = int.Parse(_config["Jwt:ExpiresMinutes"] ?? "60");
@@ -154,11 +212,11 @@ public class AuthController : ControllerBase
         return NoContent();
     }
 
-    /// <summary>Send email verification link</summary>
+    /// <summary>Send email verification link (resend)</summary>
     [HttpPost("send-verification-email")]
     [Authorize]
     [ProducesResponseType(204)]
-    public async Task<IActionResult> SendVerificationEmail([FromServices] EmailService email)
+    public async Task<IActionResult> SendVerificationEmail()
     {
         var userId = _jwt.GetUserIdFromToken(User);
         var user   = await _db.Users.FindAsync(userId);
@@ -167,17 +225,42 @@ public class AuthController : ControllerBase
         if (user.IsEmailVerified)
             return BadRequest(new { message = "Email đã được xác thực" });
 
-        await email.SendVerificationEmailAsync(user);
+        await _email.SendVerificationEmailAsync(user);
         return NoContent();
     }
 
-    /// <summary>Verify email using the token from the email link</summary>
+    /// <summary>Verify email via link in email — redirects browser to frontend</summary>
+    [HttpGet("verify-email")]
+    [ProducesResponseType(302)]
+    public async Task<IActionResult> VerifyEmail([FromQuery] string token)
+    {
+        var frontendBase = _config["App:FrontendUrl"] ?? "http://localhost:3000";
+
+        var userId = _email.ValidateVerificationToken(token);
+        if (userId == null)
+            return Redirect($"{frontendBase}/verify-email?status=expired");
+
+        var user = await _db.Users.FindAsync(userId);
+        if (user == null)
+            return Redirect($"{frontendBase}/verify-email?status=expired");
+
+        if (!user.IsEmailVerified)
+        {
+            user.IsEmailVerified = true;
+            user.UpdatedAt       = DateTime.UtcNow;
+            await _db.SaveChangesAsync();
+        }
+
+        return Redirect($"{frontendBase}/verify-email?status=success");
+    }
+
+    /// <summary>Verify email via API (JSON) — for admin or programmatic use</summary>
     [HttpPost("verify-email")]
     [ProducesResponseType(204)]
     [ProducesResponseType(400)]
-    public async Task<IActionResult> VerifyEmail([FromQuery] string token, [FromServices] EmailService email)
+    public async Task<IActionResult> VerifyEmailApi([FromQuery] string token)
     {
-        var userId = email.ValidateVerificationToken(token);
+        var userId = _email.ValidateVerificationToken(token);
         if (userId == null)
             return BadRequest(new { message = "Token không hợp lệ hoặc đã hết hạn" });
 

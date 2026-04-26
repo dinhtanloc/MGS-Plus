@@ -10,7 +10,7 @@ This directory contains everything needed to run MGSPlus in containers: the Dock
 graph TD
     subgraph Compose["docker-compose.yml  (network: mgs-net)"]
         FE["frontend\nNginx :80 -> port 3000"]
-        BE["backend\nASP.NET :5000"]
+        BE["backend\nASP.NET :5001"]
         SUP["agents-supervisor\nFastAPI :8010"]
         DOC["agents-documents\nFastAPI :8011"]
         WF["agents-workflow\nFastAPI :8012"]
@@ -38,7 +38,6 @@ All services share a bridge network (`mgs-net`). They communicate by service nam
 
 ```
 infra/
-├── docker-compose.yml
 ├── scripts/
 │   └── build.sh               # Helper to build all images sequentially
 └── docker/
@@ -95,7 +94,7 @@ Neo4j holds graph-structured medical knowledge: relationships between diagnoses,
 
 | Property | Value |
 |----------|-------|
-| Port | `${BACKEND_PORT:-5000}:5000` |
+| Port | `${BACKEND_PORT:-5001}:${BACKEND_PORT:-5001}` |
 | Depends on | `sqlserver` (healthy) |
 | Health check | `GET /health` |
 | Env overrides | `SQLSERVER_HOST=sqlserver`, `QDRANT_HOST=qdrant`, `NEO4J_URI=bolt://neo4j:7687` |
@@ -144,52 +143,52 @@ Neo4j holds graph-structured medical knowledge: relationships between diagnoses,
 
 ```bash
 # First run, or after changing source code (rebuilds images)
-docker compose -f infra/docker-compose.yml up --build -d
+docker compose up --build -d
 
 # Subsequent runs (uses existing images)
-docker compose -f infra/docker-compose.yml up -d
+docker compose up -d
 
 # Start only infrastructure databases (useful for local backend/agent development)
-docker compose -f infra/docker-compose.yml up -d sqlserver qdrant neo4j
+docker compose up -d sqlserver qdrant neo4j
 ```
 
 ### Stop
 
 ```bash
 # Stop all services, keep data volumes intact
-docker compose -f infra/docker-compose.yml down
+docker compose down
 
 # Stop all services and delete all data volumes (full reset)
-docker compose -f infra/docker-compose.yml down -v
+docker compose down -v
 ```
 
 ### Stop / start individual services
 
 ```bash
 # Stop one service
-docker compose -f infra/docker-compose.yml stop backend
+docker compose stop backend
 
 # Stop multiple services
-docker compose -f infra/docker-compose.yml stop backend frontend
+docker compose stop backend frontend
 
 # Restart a service
-docker compose -f infra/docker-compose.yml restart backend
+docker compose restart backend
 
 # Rebuild and restart a single service
-docker compose -f infra/docker-compose.yml up -d --build agents-supervisor
+docker compose up -d --build agents-supervisor
 ```
 
 ### Status & logs
 
 ```bash
 # Show running containers and their status
-docker compose -f infra/docker-compose.yml ps
+docker compose ps
 
 # List available service names
-docker compose -f infra/docker-compose.yml ps --services
+docker compose ps --services
 
 # Stream logs for a service
-docker compose -f infra/docker-compose.yml logs -f backend
+docker compose logs -f backend
 ```
 
 ### Service URLs
@@ -242,7 +241,7 @@ sequenceDiagram
 
 ## Environment Variables
 
-All variables come from a single `.env` at the project root. The Compose file sources it with `env_file: - ../.env`.
+All variables come from a single `.env` at the project root. Docker Compose reads it automatically because `docker-compose.yml` is at the project root.
 
 Variables that must be set before the first run:
 
@@ -267,9 +266,9 @@ Variables that must be set before the first run:
 Volumes survive container restarts. To wipe a single service's data:
 
 ```bash
-docker compose -f infra/docker-compose.yml stop sqlserver
+docker compose stop sqlserver
 docker volume rm mgsplus_sqlserver-data
-docker compose -f infra/docker-compose.yml up -d sqlserver
+docker compose up -d sqlserver
 ```
 
 ---
@@ -278,7 +277,7 @@ docker compose -f infra/docker-compose.yml up -d sqlserver
 
 The agents Dockerfile accepts a build argument `AGENT` (supervisor, documents, or workflow) and adjusts the startup command. This avoids duplicating the Python dependency installation layer:
 
-```
+```bash
 docker compose build agents-supervisor   # AGENT=supervisor
 docker compose build agents-documents    # AGENT=documents
 docker compose build agents-workflow     # AGENT=workflow

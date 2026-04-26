@@ -1,0 +1,213 @@
+2026-04-25 23:36:51.644 [INF] Executed DbCommand (6ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT 1
+2026-04-25 23:36:51.664 [INF] Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+2026-04-25 23:36:51.702 [INF] Executed DbCommand (38ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+DECLARE @result int;
+EXEC @result = sp_getapplock @Resource = '__EFMigrationsLock', @LockOwner = 'Session', @LockMode = 'Exclusive';
+SELECT @result
+2026-04-25 23:36:51.726 [INF] Executed DbCommand (4ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+IF OBJECT_ID(N'[__EFMigrationsHistory]') IS NULL
+BEGIN
+    CREATE TABLE [__EFMigrationsHistory] (
+        [MigrationId] nvarchar(150) NOT NULL,
+        [ProductVersion] nvarchar(32) NOT NULL,
+        CONSTRAINT [PK___EFMigrationsHistory] PRIMARY KEY ([MigrationId])
+    );
+END;
+2026-04-25 23:36:51.731 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT 1
+2026-04-25 23:36:51.733 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT OBJECT_ID(N'[__EFMigrationsHistory]');
+2026-04-25 23:36:51.744 [INF] Executed DbCommand (10ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT [MigrationId], [ProductVersion]
+FROM [__EFMigrationsHistory]
+ORDER BY [MigrationId];
+2026-04-25 23:36:51.748 [INF] No migrations were applied. The database is already up to date.
+2026-04-25 23:36:51.755 [INF] Executed DbCommand (5ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+DECLARE @result int;
+EXEC @result = sp_releaseapplock @Resource = '__EFMigrationsLock', @LockOwner = 'Session';
+SELECT @result
+2026-04-25 23:36:51.853 [INF] Executed DbCommand (18ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT CASE
+    WHEN EXISTS (
+        SELECT 1
+        FROM [Users] AS [u]
+        WHERE [u].[Role] = N'Admin') THEN CAST(1 AS bit)
+    ELSE CAST(0 AS bit)
+END
+2026-04-25 23:36:51.922 [INF] Now listening on: http://localhost:5001
+2026-04-25 23:36:51.923 [INF] Application started. Press Ctrl+C to shut down.
+2026-04-25 23:36:51.923 [INF] Hosting environment: Development
+2026-04-25 23:36:51.923 [INF] Content root path: /Users/dinhtanloc/Projects/MGSPlus/src/backend
+2026-04-25 23:38:54.024 [INF] Application is shutting down...
+2026-04-25 23:39:01.061 [INF] Executed DbCommand (6ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT 1
+2026-04-25 23:39:01.076 [INF] Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+2026-04-25 23:39:01.085 [INF] Executed DbCommand (7ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+DECLARE @result int;
+EXEC @result = sp_getapplock @Resource = '__EFMigrationsLock', @LockOwner = 'Session', @LockMode = 'Exclusive';
+SELECT @result
+2026-04-25 23:39:01.107 [INF] Executed DbCommand (3ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+IF OBJECT_ID(N'[__EFMigrationsHistory]') IS NULL
+BEGIN
+    CREATE TABLE [__EFMigrationsHistory] (
+        [MigrationId] nvarchar(150) NOT NULL,
+        [ProductVersion] nvarchar(32) NOT NULL,
+        CONSTRAINT [PK___EFMigrationsHistory] PRIMARY KEY ([MigrationId])
+    );
+END;
+2026-04-25 23:39:01.111 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT 1
+2026-04-25 23:39:01.113 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT OBJECT_ID(N'[__EFMigrationsHistory]');
+2026-04-25 23:39:01.116 [INF] Executed DbCommand (3ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT [MigrationId], [ProductVersion]
+FROM [__EFMigrationsHistory]
+ORDER BY [MigrationId];
+2026-04-25 23:39:01.119 [INF] No migrations were applied. The database is already up to date.
+2026-04-25 23:39:01.123 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+DECLARE @result int;
+EXEC @result = sp_releaseapplock @Resource = '__EFMigrationsLock', @LockOwner = 'Session';
+SELECT @result
+2026-04-25 23:39:01.202 [INF] Executed DbCommand (2ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT CASE
+    WHEN EXISTS (
+        SELECT 1
+        FROM [Users] AS [u]
+        WHERE [u].[Role] = N'Admin') THEN CAST(1 AS bit)
+    ELSE CAST(0 AS bit)
+END
+2026-04-25 23:39:01.265 [INF] Now listening on: http://localhost:5001
+2026-04-25 23:39:01.265 [INF] Application started. Press Ctrl+C to shut down.
+2026-04-25 23:39:01.265 [INF] Hosting environment: Development
+2026-04-25 23:39:01.265 [INF] Content root path: /Users/dinhtanloc/Projects/MGSPlus/src/backend
+2026-04-25 23:40:46.700 [INF] Executed DbCommand (29ms) [Parameters=[@__req_Email_0='?' (Size = 256)], CommandType='"Text"', CommandTimeout='30']
+SELECT CASE
+    WHEN EXISTS (
+        SELECT 1
+        FROM [Users] AS [u]
+        WHERE [u].[Email] = @__req_Email_0) THEN CAST(1 AS bit)
+    ELSE CAST(0 AS bit)
+END
+2026-04-25 23:40:46.975 [INF] Executed DbCommand (42ms) [Parameters=[@p0='?' (DbType = DateTime2), @p1='?' (DbType = DateTime2), @p2='?' (Size = 256), @p3='?' (Size = 100), @p4='?' (DbType = Boolean), @p5='?' (DbType = Boolean), @p6='?' (Size = 100), @p7='?' (Size = 4000), @p8='?' (Size = 20), @p9='?' (Size = 20), @p10='?' (DbType = DateTime2)], CommandType='"Text"', CommandTimeout='30']
+SET IMPLICIT_TRANSACTIONS OFF;
+SET NOCOUNT ON;
+INSERT INTO [Users] ([CreatedAt], [DateOfBirth], [Email], [FirstName], [IsActive], [IsEmailVerified], [LastName], [PasswordHash], [PhoneNumber], [Role], [UpdatedAt])
+OUTPUT INSERTED.[Id]
+VALUES (@p0, @p1, @p2, @p3, @p4, @p5, @p6, @p7, @p8, @p9, @p10);
+2026-04-25 23:40:47.007 [INF] Executed DbCommand (10ms) [Parameters=[@p0='?' (Size = 500), @p1='?' (Size = 500), @p2='?' (Size = 512), @p3='?' (Size = 10), @p4='?' (Size = 1000), @p5='?' (DbType = DateTime2), @p6='?' (DbType = DateTime2), @p7='?' (Size = 50), @p8='?' (Size = 100), @p9='?' (DbType = DateTime2), @p10='?' (DbType = DateTime2), @p11='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SET IMPLICIT_TRANSACTIONS OFF;
+SET NOCOUNT ON;
+INSERT INTO [UserProfiles] ([Address], [Allergies], [AvatarUrl], [BloodType], [ChronicDiseases], [CreatedAt], [InsuranceEndDate], [InsuranceNumber], [InsuranceProvider], [InsuranceStartDate], [UpdatedAt], [UserId])
+OUTPUT INSERTED.[Id]
+VALUES (@p0, @p1, @p2, @p3, @p4, @p5, @p6, @p7, @p8, @p9, @p10, @p11);
+2026-04-25 23:40:47.025 [INF] Executed DbCommand (5ms) [Parameters=[@p0='?' (DbType = DateTime2), @p1='?' (DbType = DateTime2), @p2='?' (DbType = Boolean), @p3='?' (Size = 256), @p4='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SET IMPLICIT_TRANSACTIONS OFF;
+SET NOCOUNT ON;
+INSERT INTO [RefreshTokens] ([CreatedAt], [ExpiresAt], [IsRevoked], [Token], [UserId])
+OUTPUT INSERTED.[Id]
+VALUES (@p0, @p1, @p2, @p3, @p4);
+2026-04-25 23:40:47.032 [WRN] SMTP not configured — skipping email to test@test.com: MGSPlus — Xác thực địa chỉ email
+2026-04-25 23:40:47.038 [INF] HTTP POST /api/auth/register responded 201 in 425.7058 ms
+2026-04-25 23:46:40.575 [INF] Executed DbCommand (2ms) [Parameters=[@__req_Email_0='?' (Size = 256)], CommandType='"Text"', CommandTimeout='30']
+SELECT CASE
+    WHEN EXISTS (
+        SELECT 1
+        FROM [Users] AS [u]
+        WHERE [u].[Email] = @__req_Email_0) THEN CAST(1 AS bit)
+    ELSE CAST(0 AS bit)
+END
+2026-04-25 23:46:40.924 [INF] Executed DbCommand (4ms) [Parameters=[@p0='?' (DbType = DateTime2), @p1='?' (DbType = DateTime2), @p2='?' (Size = 256), @p3='?' (Size = 100), @p4='?' (DbType = Boolean), @p5='?' (DbType = Boolean), @p6='?' (Size = 100), @p7='?' (Size = 4000), @p8='?' (Size = 20), @p9='?' (Size = 20), @p10='?' (DbType = DateTime2)], CommandType='"Text"', CommandTimeout='30']
+SET IMPLICIT_TRANSACTIONS OFF;
+SET NOCOUNT ON;
+INSERT INTO [Users] ([CreatedAt], [DateOfBirth], [Email], [FirstName], [IsActive], [IsEmailVerified], [LastName], [PasswordHash], [PhoneNumber], [Role], [UpdatedAt])
+OUTPUT INSERTED.[Id]
+VALUES (@p0, @p1, @p2, @p3, @p4, @p5, @p6, @p7, @p8, @p9, @p10);
+2026-04-25 23:46:40.929 [INF] Executed DbCommand (3ms) [Parameters=[@p0='?' (Size = 500), @p1='?' (Size = 500), @p2='?' (Size = 512), @p3='?' (Size = 10), @p4='?' (Size = 1000), @p5='?' (DbType = DateTime2), @p6='?' (DbType = DateTime2), @p7='?' (Size = 50), @p8='?' (Size = 100), @p9='?' (DbType = DateTime2), @p10='?' (DbType = DateTime2), @p11='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SET IMPLICIT_TRANSACTIONS OFF;
+SET NOCOUNT ON;
+INSERT INTO [UserProfiles] ([Address], [Allergies], [AvatarUrl], [BloodType], [ChronicDiseases], [CreatedAt], [InsuranceEndDate], [InsuranceNumber], [InsuranceProvider], [InsuranceStartDate], [UpdatedAt], [UserId])
+OUTPUT INSERTED.[Id]
+VALUES (@p0, @p1, @p2, @p3, @p4, @p5, @p6, @p7, @p8, @p9, @p10, @p11);
+2026-04-25 23:46:40.933 [INF] Executed DbCommand (2ms) [Parameters=[@p0='?' (DbType = DateTime2), @p1='?' (DbType = DateTime2), @p2='?' (DbType = Boolean), @p3='?' (Size = 256), @p4='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SET IMPLICIT_TRANSACTIONS OFF;
+SET NOCOUNT ON;
+INSERT INTO [RefreshTokens] ([CreatedAt], [ExpiresAt], [IsRevoked], [Token], [UserId])
+OUTPUT INSERTED.[Id]
+VALUES (@p0, @p1, @p2, @p3, @p4);
+2026-04-25 23:46:40.934 [WRN] SMTP not configured — skipping email to testlocal3@test.com: MGSPlus — Xác thực địa chỉ email
+2026-04-25 23:46:40.936 [INF] HTTP POST /api/auth/register responded 201 in 421.5023 ms
+2026-04-25 23:53:35.486 [INF] Executed DbCommand (13ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT 1
+2026-04-25 23:53:35.515 [INF] Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+2026-04-25 23:53:35.527 [INF] Executed DbCommand (10ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+DECLARE @result int;
+EXEC @result = sp_getapplock @Resource = '__EFMigrationsLock', @LockOwner = 'Session', @LockMode = 'Exclusive';
+SELECT @result
+2026-04-25 23:53:35.565 [INF] Executed DbCommand (3ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+IF OBJECT_ID(N'[__EFMigrationsHistory]') IS NULL
+BEGIN
+    CREATE TABLE [__EFMigrationsHistory] (
+        [MigrationId] nvarchar(150) NOT NULL,
+        [ProductVersion] nvarchar(32) NOT NULL,
+        CONSTRAINT [PK___EFMigrationsHistory] PRIMARY KEY ([MigrationId])
+    );
+END;
+2026-04-25 23:53:35.574 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT 1
+2026-04-25 23:53:35.575 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT OBJECT_ID(N'[__EFMigrationsHistory]');
+2026-04-25 23:53:35.578 [INF] Executed DbCommand (2ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT [MigrationId], [ProductVersion]
+FROM [__EFMigrationsHistory]
+ORDER BY [MigrationId];
+2026-04-25 23:53:35.583 [INF] No migrations were applied. The database is already up to date.
+2026-04-25 23:53:35.589 [INF] Executed DbCommand (2ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+DECLARE @result int;
+EXEC @result = sp_releaseapplock @Resource = '__EFMigrationsLock', @LockOwner = 'Session';
+SELECT @result
+2026-04-25 23:53:35.735 [INF] Executed DbCommand (2ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT CASE
+    WHEN EXISTS (
+        SELECT 1
+        FROM [Users] AS [u]
+        WHERE [u].[Role] = N'Admin') THEN CAST(1 AS bit)
+    ELSE CAST(0 AS bit)
+END
+2026-04-25 23:53:35.928 [INF] Now listening on: http://localhost:5001
+2026-04-25 23:53:35.929 [INF] Application started. Press Ctrl+C to shut down.
+2026-04-25 23:53:35.929 [INF] Hosting environment: Development
+2026-04-25 23:53:35.929 [INF] Content root path: /Users/dinhtanloc/Projects/MGSPlus/src/backend
+2026-04-25 23:54:46.867 [INF] Executed DbCommand (19ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [News] AS [n]
+WHERE [n].[IsPublished] = CAST(1 AS bit)
+2026-04-25 23:54:46.945 [INF] Executed DbCommand (20ms) [Parameters=[@__p_0='?' (DbType = Int32), @__p_1='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT [n1].[Id], [n1].[Title], [n1].[Summary], [n1].[ImageUrl], [n1].[Source], [n0].[Name], [n1].[ViewCount], [n1].[PublishedAt]
+FROM (
+    SELECT [n].[Id], [n].[CategoryId], [n].[ImageUrl], [n].[PublishedAt], [n].[Source], [n].[Summary], [n].[Title], [n].[ViewCount]
+    FROM [News] AS [n]
+    WHERE [n].[IsPublished] = CAST(1 AS bit)
+    ORDER BY [n].[PublishedAt] DESC
+    OFFSET @__p_0 ROWS FETCH NEXT @__p_1 ROWS ONLY
+) AS [n1]
+LEFT JOIN [NewsCategories] AS [n0] ON [n1].[CategoryId] = [n0].[Id]
+ORDER BY [n1].[PublishedAt] DESC
+2026-04-25 23:54:46.974 [INF] HTTP GET /api/news responded 200 in 212.3166 ms
+2026-04-25 23:55:33.024 [INF] Executed DbCommand (3ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [News] AS [n]
+WHERE [n].[IsPublished] = CAST(1 AS bit)
+2026-04-25 23:55:33.028 [INF] Executed DbCommand (2ms) [Parameters=[@__p_0='?' (DbType = Int32), @__p_1='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT [n1].[Id], [n1].[Title], [n1].[Summary], [n1].[ImageUrl], [n1].[Source], [n0].[Name], [n1].[ViewCount], [n1].[PublishedAt]
+FROM (
+    SELECT [n].[Id], [n].[CategoryId], [n].[ImageUrl], [n].[PublishedAt], [n].[Source], [n].[Summary], [n].[Title], [n].[ViewCount]
+    FROM [News] AS [n]
+    WHERE [n].[IsPublished] = CAST(1 AS bit)
+    ORDER BY [n].[PublishedAt] DESC
+    OFFSET @__p_0 ROWS FETCH NEXT @__p_1 ROWS ONLY
+) AS [n1]
+LEFT JOIN [NewsCategories] AS [n0] ON [n1].[CategoryId] = [n0].[Id]
+ORDER BY [n1].[PublishedAt] DESC
+2026-04-25 23:55:33.029 [INF] HTTP GET /api/news responded 200 in 37.9120 ms
+2026-04-25 23:57:10.859 [INF] Application is shutting down...

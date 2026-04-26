@@ -33,9 +33,10 @@ def _get(d: dict[str, Any], *keys: str, default: Any = None) -> Any:
     return node
 
 
-# Load the two config files relevant to agents
-_infra = _load_yml("infra-config.yml")
-_agents = _load_yml("agents-config.yml")
+# Load config files
+_infra   = _load_yml("infra-config.yml")
+_agents  = _load_yml("agents-config.yml")
+_backend = _load_yml("backend-config.yml")
 
 
 # ── Settings ───────────────────────────────────────────────────────────────────
@@ -163,7 +164,10 @@ class Settings(BaseSettings):
     agent_api_key: str = Field(default="", alias="AGENT_API_KEY")
 
     # ── Backend URL (for workflow tools to call backend REST API) ─────────────
-    backend_url: str = Field(default="http://localhost:5000", alias="BACKEND_URL")
+    backend_url: str = Field(
+        default=f"http://localhost:{_get(_backend, 'service', 'port', default=5001)}",
+        alias="BACKEND_URL",
+    )
 
     # ── Memory (from agents-config.yml) ──────────────────────────────────────
     short_term_ttl_seconds: int = Field(
