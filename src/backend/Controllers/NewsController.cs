@@ -28,7 +28,7 @@ public class NewsController : ControllerBase
         [FromQuery] int? categoryId,
         [FromQuery] string? search,
         [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 10)
+        [FromQuery] int pageSize = 15)
     {
         var query = _db.News
             .Include(n => n.Category)

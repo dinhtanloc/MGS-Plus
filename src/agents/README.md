@@ -248,7 +248,7 @@ llm:
   provider: ollama            # or openai
   model: gpt-4o-mini
   ollama:
-    model: qwen2.5:7b
+    model: llama3.1:latest
     base_url: http://localhost:11434
     embedding_model: nomic-embed-text
 

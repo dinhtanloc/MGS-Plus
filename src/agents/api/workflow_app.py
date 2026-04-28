@@ -12,7 +12,7 @@ from src.agents.core.a2a.schemas import (
     TaskOutput,
 )
 from src.agents.core.config import Settings, get_settings
-from src.agents.agents.workflow.agent import build_workflow_agent
+from src.agents.specialists.workflow.agent import build_workflow_agent
 from src.agents.crews.tasks.workflow_tasks import execute_platform_task
 
 from crewai import Crew, Process

@@ -26,9 +26,9 @@ def settings():
     return Settings(
         openai_api_key="sk-test",
         llm_provider="ollama",
-        ollama_model="qwen2.5:7b",
-        ollama_base_url="http://localhost:11434",
-        ollama_embedding_model="nomic-embed-text",
+        llm_model="llama3.1:latest",
+        llm_base_url="http://localhost:11434",
+        llm_embedding_model="nomic-embed-text",
         qdrant_host="localhost",
         qdrant_port=6333,
         qdrant_grpc_port=6334,

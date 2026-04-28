@@ -18,12 +18,10 @@ services:
 
 # ── LLM ───────────────────────────────────────────────────────
 llm:
-  provider: ollama          # openai | ollama
-  model: gpt-4o-mini        # used when provider=openai
-  ollama:
-    model: qwen3.5:latest
-    base_url: http://localhost:11434
-    embedding_model: nomic-embed-text
+  provider: ollama          # openai | ollama | vllm | any openai-compatible
+  model: llama3.1:latest
+  base_url: http://localhost:11434
+  embedding_model: nomic-embed-text
 
 # ── Conversation memory ────────────────────────────────────────
 memory:
@@ -35,3 +33,4 @@ mcp:
   zalo_url: ""
   messenger_url: ""
   wiki_url: "http://mcp-wiki:8020"
+  web_url: "http://mcp-web:8021"

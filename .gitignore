@@ -13,6 +13,8 @@ net9.0/
 .venv
 appsettings.json
 
+.claude/
+
 # Env files — single root .env is the only secret file
 .env
 .env.local

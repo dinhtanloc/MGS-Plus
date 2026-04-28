@@ -188,7 +188,7 @@ MGSPlus supports two LLM providers. Switch via `.env`:
 ```bash
 # Local — free, no internet, requires Ollama installed
 LLM_PROVIDER=ollama
-OLLAMA_MODEL=qwen2.5:7b
+OLLAMA_MODEL=llama3.1:latest
 OLLAMA_BASE_URL=http://localhost:11434
 
 # Cloud — requires OpenAI API key
@@ -200,7 +200,7 @@ LLM_MODEL=gpt-4o-mini
 Install a model with Ollama:
 
 ```bash
-ollama pull qwen2.5:7b
+ollama pull llama3.1:latest
 ollama pull nomic-embed-text   # for embeddings
 ```
 

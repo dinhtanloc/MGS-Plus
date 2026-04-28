@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import asyncio
 import concurrent.futures
-from typing import Any, Optional, Type
+from typing import Any, Dict, List, Optional, Type
 
+import httpx
 from crewai.tools import BaseTool
 from pydantic import BaseModel, Field
 
@@ -163,3 +164,243 @@ class WebActionTool(BaseTool):
             )
         except Exception as exc:
             return f"Could not reach backend for action '{action}': {exc}"
+
+
+# ── View appointments tool ────────────────────────────────────────────────────
+
+class ViewAppointmentsInput(BaseModel):
+    user_id: str = Field(description="User ID to fetch appointments for")
+    status: Optional[str] = Field(
+        default=None,
+        description="Filter by appointment status: 'upcoming', 'past', 'cancelled', or omit for all",
+    )
+
+
+class ViewAppointmentsTool(BaseTool):
+    name: str = "view_appointments"
+    description: str = (
+        "View medical appointments for a user on the MGSPlus platform. "
+        "Returns scheduled appointments with date, doctor name, specialty, and status. "
+        "Use when the user asks about their upcoming or past appointments."
+    )
+    args_schema: Type[BaseModel] = ViewAppointmentsInput
+
+    _settings: Settings = None  # type: ignore
+    _api: InternalApiClient = None  # type: ignore
+
+    def __init__(self, settings: Optional[Settings] = None, **kwargs: Any) -> None:
+        super().__init__(**kwargs)
+        self._settings = settings or get_settings()
+        self._api = InternalApiClient(self._settings)
+
+    def _run(self, user_id: str, status: Optional[str] = None) -> str:
+        return _run_async(self._fetch_appointments(user_id, status))
+
+    async def _fetch_appointments(self, user_id: str, status: Optional[str]) -> str:
+        params: Dict[str, str] = {}
+        if status:
+            params["status"] = status
+        try:
+            resp = await self._api.get(f"/api/users/{user_id}/appointments", params=params)
+            if resp.status_code == 200:
+                data = resp.json()
+                if not data:
+                    return f"No appointments found for user '{user_id}'."
+                lines = [f"Appointments for user '{user_id}':\n"]
+                for apt in data:
+                    lines.append(
+                        f"  • [{apt.get('appointmentDate', 'N/A')}] "
+                        f"Dr. {apt.get('doctorName', 'N/A')} — "
+                        f"{apt.get('specialty', '')} | "
+                        f"Status: {apt.get('status', 'N/A')} | "
+                        f"Location: {apt.get('location', 'N/A')}"
+                    )
+                return "\n".join(lines)
+            return f"Backend returned {resp.status_code} when fetching appointments for '{user_id}'."
+        except Exception as exc:
+            return f"Could not fetch appointments: {exc}"
+
+
+# ── View medical records tool ─────────────────────────────────────────────────
+
+class ViewMedicalRecordsInput(BaseModel):
+    user_id: str = Field(description="User ID to fetch medical records for")
+    record_type: Optional[str] = Field(
+        default=None,
+        description=(
+            "Type of records to retrieve: "
+            "'lab' (lab results), 'prescription' (medication history), "
+            "'diagnosis' (diagnoses), 'imaging' (X-ray, MRI). "
+            "Omit to retrieve all types."
+        ),
+    )
+    limit: int = Field(default=10, ge=1, le=50, description="Max records to return")
+
+
+class ViewMedicalRecordsTool(BaseTool):
+    name: str = "view_medical_records"
+    description: str = (
+        "View medical records for a user on the MGSPlus platform. "
+        "Returns lab results, prescriptions, diagnoses, and imaging records. "
+        "Use when the user asks about their health history or test results."
+    )
+    args_schema: Type[BaseModel] = ViewMedicalRecordsInput
+
+    _settings: Settings = None  # type: ignore
+    _api: InternalApiClient = None  # type: ignore
+
+    def __init__(self, settings: Optional[Settings] = None, **kwargs: Any) -> None:
+        super().__init__(**kwargs)
+        self._settings = settings or get_settings()
+        self._api = InternalApiClient(self._settings)
+
+    def _run(self, user_id: str, record_type: Optional[str] = None, limit: int = 10) -> str:
+        return _run_async(self._fetch_records(user_id, record_type, limit))
+
+    async def _fetch_records(
+        self, user_id: str, record_type: Optional[str], limit: int
+    ) -> str:
+        params: Dict[str, Any] = {"limit": limit}
+        if record_type:
+            params["type"] = record_type
+        try:
+            resp = await self._api.get(f"/api/users/{user_id}/medical-records", params=params)
+            if resp.status_code == 200:
+                data = resp.json()
+                if not data:
+                    return f"No medical records found for user '{user_id}'."
+                lines = [f"Medical records for user '{user_id}':\n"]
+                for rec in data:
+                    lines.append(
+                        f"  • [{rec.get('date', 'N/A')}] "
+                        f"Type: {rec.get('type', 'N/A')} | "
+                        f"Title: {rec.get('title', 'N/A')} | "
+                        f"Doctor: {rec.get('doctorName', 'N/A')} | "
+                        f"Notes: {rec.get('notes', '')}"
+                    )
+                return "\n".join(lines)
+            return f"Backend returned {resp.status_code} when fetching records for '{user_id}'."
+        except Exception as exc:
+            return f"Could not fetch medical records: {exc}"
+
+
+# ── Search MGSPlus platform content ──────────────────────────────────────────
+
+class SearchPlatformInput(BaseModel):
+    query: str = Field(description="Search query to look up on the MGSPlus platform")
+    content_type: str = Field(
+        default="all",
+        description=(
+            "Type of content to search: "
+            "'news' (health news), 'blog' (articles), "
+            "'doctor' (doctor profiles), 'service' (hospital services), 'all'"
+        ),
+    )
+    limit: int = Field(default=5, ge=1, le=20, description="Maximum results to return")
+
+
+class SearchPlatformTool(BaseTool):
+    name: str = "search_platform"
+    description: str = (
+        "Search the MGSPlus platform for content: news articles, blog posts, "
+        "doctor profiles, and hospital services. "
+        "Use when the user asks to find a doctor, read health news, or look up a service."
+    )
+    args_schema: Type[BaseModel] = SearchPlatformInput
+
+    _settings: Settings = None  # type: ignore
+    _api: InternalApiClient = None  # type: ignore
+
+    def __init__(self, settings: Optional[Settings] = None, **kwargs: Any) -> None:
+        super().__init__(**kwargs)
+        self._settings = settings or get_settings()
+        self._api = InternalApiClient(self._settings)
+
+    def _run(self, query: str, content_type: str = "all", limit: int = 5) -> str:
+        return _run_async(self._search(query, content_type, limit))
+
+    async def _search(self, query: str, content_type: str, limit: int) -> str:
+        params: Dict[str, Any] = {"q": query, "limit": limit}
+        if content_type != "all":
+            params["type"] = content_type
+        try:
+            resp = await self._api.get("/api/search", params=params)
+            if resp.status_code == 200:
+                data = resp.json()
+                items: List[dict] = data if isinstance(data, list) else data.get("results", [])
+                if not items:
+                    return f"No results found on MGSPlus for: '{query}'."
+                lines = [f"MGSPlus search results for '{query}':\n"]
+                for item in items[:limit]:
+                    lines.append(
+                        f"  • [{item.get('type', 'content')}] "
+                        f"{item.get('title', 'N/A')} "
+                        f"— {item.get('summary', item.get('description', ''))[:120]}"
+                    )
+                return "\n".join(lines)
+            return f"Backend returned {resp.status_code} for search query '{query}'."
+        except Exception as exc:
+            return f"Could not search MGSPlus platform: {exc}"
+
+
+# ── Fetch MGSPlus page content ────────────────────────────────────────────────
+
+class MGSPlusPageFetchInput(BaseModel):
+    path: str = Field(
+        description=(
+            "API path or page path on the MGSPlus platform to fetch. "
+            "Examples: '/api/news', '/api/blog', '/api/doctors', '/api/services'"
+        )
+    )
+    params: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="Optional query parameters, e.g. {'page': 1, 'limit': 10}",
+    )
+
+
+class MGSPlusPageFetchTool(BaseTool):
+    name: str = "fetch_mgsplus_page"
+    description: str = (
+        "Fetch data from a specific MGSPlus platform page or API endpoint. "
+        "Use this to browse lists of news articles, blog posts, doctors, or services "
+        "when you need to retrieve the full listing rather than a specific search. "
+        "Examples: path='/api/news' fetches the news feed, path='/api/doctors' fetches doctor list."
+    )
+    args_schema: Type[BaseModel] = MGSPlusPageFetchInput
+
+    _settings: Settings = None  # type: ignore
+    _api: InternalApiClient = None  # type: ignore
+
+    def __init__(self, settings: Optional[Settings] = None, **kwargs: Any) -> None:
+        super().__init__(**kwargs)
+        self._settings = settings or get_settings()
+        self._api = InternalApiClient(self._settings)
+
+    def _run(self, path: str, params: Dict[str, Any] = None) -> str:
+        return _run_async(self._fetch_page(path, params or {}))
+
+    async def _fetch_page(self, path: str, params: Dict[str, Any]) -> str:
+        try:
+            resp = await self._api.get(path, params=params or {})
+            if resp.status_code == 200:
+                data = resp.json()
+                if not data:
+                    return f"No data returned from '{path}'."
+                if isinstance(data, list):
+                    lines = [f"Data from {path} ({len(data)} items):\n"]
+                    for item in data[:20]:
+                        title = (
+                            item.get("title")
+                            or item.get("name")
+                            or item.get("fullName")
+                            or str(item.get("id", ""))
+                        )
+                        desc  = item.get("summary") or item.get("description") or item.get("specialty") or ""
+                        lines.append(f"  • {title} — {str(desc)[:100]}")
+                    return "\n".join(lines)
+                # Single object
+                import json as _json
+                return f"Data from {path}:\n{_json.dumps(data, ensure_ascii=False, indent=2)[:3000]}"
+            return f"Backend returned {resp.status_code} for path '{path}'."
+        except Exception as exc:
+            return f"Could not fetch '{path}': {exc}"

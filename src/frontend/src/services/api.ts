@@ -126,7 +126,7 @@ export const appointmentApi = {
 
 // ── Blog ──────────────────────────────────────────────────────────────────────
 export const blogApi = {
-  list:          (params?: { categoryId?: number; search?: string; page?: number }) => api.get<PaginatedResponse<BlogPostDto>>('/blog', { params }),
+  list:          (params?: { categoryId?: number; search?: string; page?: number; pageSize?: number }) => api.get<PaginatedResponse<BlogPostDto>>('/blog', { params }),
   getBySlug:     (slug: string)                                                     => api.get<BlogPostDto>(`/blog/${slug}`),
   getCategories: ()                                                                 => api.get('/blog/categories'),
   create:        (data: CreateBlogPostRequest)                                      => api.post<BlogPostDto>('/blog', data),
@@ -136,7 +136,7 @@ export const blogApi = {
 
 // ── News ──────────────────────────────────────────────────────────────────────
 export const newsApi = {
-  list:          (params?: { categoryId?: number; search?: string; page?: number }) => api.get<PaginatedResponse<NewsDto>>('/news', { params }),
+  list:          (params?: { categoryId?: number; search?: string; page?: number; pageSize?: number }) => api.get<PaginatedResponse<NewsDto>>('/news', { params }),
   get:           (id: number)                                                        => api.get<NewsDto>(`/news/${id}`),
   featured:      (limit?: number)                                                    => api.get<NewsDto[]>('/news/featured', { params: { limit } }),
   getCategories: ()                                                                  => api.get('/news/categories'),

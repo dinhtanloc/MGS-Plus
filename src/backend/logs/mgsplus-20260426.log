@@ -1251,3 +1251,136 @@ FROM (
 LEFT JOIN [NewsCategories] AS [n0] ON [n1].[CategoryId] = [n0].[Id]
 ORDER BY [n1].[PublishedAt] DESC
 2026-04-26 11:06:48.676 [INF] HTTP GET /api/news responded 200 in 8.5185 ms
+2026-04-26 11:18:20.835 [INF] Executed DbCommand (7ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT 1
+2026-04-26 11:18:20.851 [INF] Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+2026-04-26 11:18:20.868 [INF] Executed DbCommand (16ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+DECLARE @result int;
+EXEC @result = sp_getapplock @Resource = '__EFMigrationsLock', @LockOwner = 'Session', @LockMode = 'Exclusive';
+SELECT @result
+2026-04-26 11:18:20.890 [INF] Executed DbCommand (3ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+IF OBJECT_ID(N'[__EFMigrationsHistory]') IS NULL
+BEGIN
+    CREATE TABLE [__EFMigrationsHistory] (
+        [MigrationId] nvarchar(150) NOT NULL,
+        [ProductVersion] nvarchar(32) NOT NULL,
+        CONSTRAINT [PK___EFMigrationsHistory] PRIMARY KEY ([MigrationId])
+    );
+END;
+2026-04-26 11:18:20.897 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT 1
+2026-04-26 11:18:20.898 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT OBJECT_ID(N'[__EFMigrationsHistory]');
+2026-04-26 11:18:20.903 [INF] Executed DbCommand (4ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT [MigrationId], [ProductVersion]
+FROM [__EFMigrationsHistory]
+ORDER BY [MigrationId];
+2026-04-26 11:18:20.906 [INF] No migrations were applied. The database is already up to date.
+2026-04-26 11:18:20.912 [INF] Executed DbCommand (3ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+DECLARE @result int;
+EXEC @result = sp_releaseapplock @Resource = '__EFMigrationsLock', @LockOwner = 'Session';
+SELECT @result
+2026-04-26 11:18:21.004 [INF] Executed DbCommand (6ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT CASE
+    WHEN EXISTS (
+        SELECT 1
+        FROM [Users] AS [u]
+        WHERE [u].[Role] = N'Admin') THEN CAST(1 AS bit)
+    ELSE CAST(0 AS bit)
+END
+2026-04-26 11:18:21.081 [INF] Now listening on: http://localhost:5001
+2026-04-26 11:18:21.081 [INF] Application started. Press Ctrl+C to shut down.
+2026-04-26 11:18:21.081 [INF] Hosting environment: Development
+2026-04-26 11:18:21.081 [INF] Content root path: /Users/dinhtanloc/Projects/MGSPlus/src/backend
+2026-04-26 11:18:26.474 [INF] Executed DbCommand (16ms) [Parameters=[@__p_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [u].[Id], [u].[CreatedAt], [u].[DateOfBirth], [u].[Email], [u].[FirstName], [u].[IsActive], [u].[IsEmailVerified], [u].[LastName], [u].[PasswordHash], [u].[PhoneNumber], [u].[Role], [u].[UpdatedAt]
+FROM [Users] AS [u]
+WHERE [u].[Id] = @__p_0
+2026-04-26 11:18:26.509 [INF] HTTP GET /api/auth/me responded 200 in 154.1186 ms
+2026-04-26 11:18:26.561 [INF] Executed DbCommand (2ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [News] AS [n]
+WHERE [n].[IsPublished] = CAST(1 AS bit)
+2026-04-26 11:18:26.566 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT [n].[Id], [n].[Name], [n].[Slug], (
+    SELECT COUNT(*)
+    FROM [News] AS [n0]
+    WHERE [n].[Id] = [n0].[CategoryId] AND [n0].[IsPublished] = CAST(1 AS bit)) AS [Count]
+FROM [NewsCategories] AS [n]
+2026-04-26 11:18:26.569 [INF] HTTP GET /api/news/categories responded 200 in 39.6510 ms
+2026-04-26 11:18:26.573 [INF] Executed DbCommand (2ms) [Parameters=[@__p_0='?' (DbType = Int32), @__p_1='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT [n1].[Id], [n1].[Title], [n1].[Summary], [n1].[ImageUrl], [n1].[Source], [n0].[Name], [n1].[ViewCount], [n1].[PublishedAt]
+FROM (
+    SELECT [n].[Id], [n].[CategoryId], [n].[ImageUrl], [n].[PublishedAt], [n].[Source], [n].[Summary], [n].[Title], [n].[ViewCount]
+    FROM [News] AS [n]
+    WHERE [n].[IsPublished] = CAST(1 AS bit)
+    ORDER BY [n].[PublishedAt] DESC
+    OFFSET @__p_0 ROWS FETCH NEXT @__p_1 ROWS ONLY
+) AS [n1]
+LEFT JOIN [NewsCategories] AS [n0] ON [n1].[CategoryId] = [n0].[Id]
+ORDER BY [n1].[PublishedAt] DESC
+2026-04-26 11:18:26.576 [INF] HTTP GET /api/news responded 200 in 46.6301 ms
+2026-04-26 11:29:13.145 [INF] Executed DbCommand (2ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT [b].[Id], [b].[Name], [b].[Slug], [b].[Description], (
+    SELECT COUNT(*)
+    FROM [BlogPosts] AS [b0]
+    WHERE [b].[Id] = [b0].[CategoryId] AND [b0].[IsPublished] = CAST(1 AS bit)) AS [PostCount]
+FROM [BlogCategories] AS [b]
+2026-04-26 11:29:13.148 [INF] HTTP GET /api/blog/categories responded 200 in 41.3921 ms
+2026-04-26 11:29:13.159 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [BlogPosts] AS [b]
+WHERE [b].[IsPublished] = CAST(1 AS bit)
+2026-04-26 11:29:13.166 [INF] Executed DbCommand (2ms) [Parameters=[@__p_0='?' (DbType = Int32), @__p_1='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT [b0].[Id], [b0].[Title], [b0].[Slug], [b0].[Summary], [b0].[ThumbnailUrl], [b0].[Tags], [b0].[ViewCount], [u].[FirstName] + N' ' + [u].[LastName], [b1].[Name], [b0].[PublishedAt]
+FROM (
+    SELECT [b].[Id], [b].[AuthorId], [b].[CategoryId], [b].[PublishedAt], [b].[Slug], [b].[Summary], [b].[Tags], [b].[ThumbnailUrl], [b].[Title], [b].[ViewCount]
+    FROM [BlogPosts] AS [b]
+    WHERE [b].[IsPublished] = CAST(1 AS bit)
+    ORDER BY [b].[PublishedAt] DESC
+    OFFSET @__p_0 ROWS FETCH NEXT @__p_1 ROWS ONLY
+) AS [b0]
+INNER JOIN [Users] AS [u] ON [b0].[AuthorId] = [u].[Id]
+LEFT JOIN [BlogCategories] AS [b1] ON [b0].[CategoryId] = [b1].[Id]
+ORDER BY [b0].[PublishedAt] DESC
+2026-04-26 11:29:13.167 [INF] HTTP GET /api/blog responded 200 in 61.6008 ms
+2026-04-26 11:29:13.785 [INF] Executed DbCommand (3ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [News] AS [n]
+WHERE [n].[IsPublished] = CAST(1 AS bit)
+2026-04-26 11:29:13.785 [INF] Executed DbCommand (3ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT [n].[Id], [n].[Name], [n].[Slug], (
+    SELECT COUNT(*)
+    FROM [News] AS [n0]
+    WHERE [n].[Id] = [n0].[CategoryId] AND [n0].[IsPublished] = CAST(1 AS bit)) AS [Count]
+FROM [NewsCategories] AS [n]
+2026-04-26 11:29:13.786 [INF] HTTP GET /api/news/categories responded 200 in 7.2004 ms
+2026-04-26 11:29:13.789 [INF] Executed DbCommand (2ms) [Parameters=[@__p_0='?' (DbType = Int32), @__p_1='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT [n1].[Id], [n1].[Title], [n1].[Summary], [n1].[ImageUrl], [n1].[Source], [n0].[Name], [n1].[ViewCount], [n1].[PublishedAt]
+FROM (
+    SELECT [n].[Id], [n].[CategoryId], [n].[ImageUrl], [n].[PublishedAt], [n].[Source], [n].[Summary], [n].[Title], [n].[ViewCount]
+    FROM [News] AS [n]
+    WHERE [n].[IsPublished] = CAST(1 AS bit)
+    ORDER BY [n].[PublishedAt] DESC
+    OFFSET @__p_0 ROWS FETCH NEXT @__p_1 ROWS ONLY
+) AS [n1]
+LEFT JOIN [NewsCategories] AS [n0] ON [n1].[CategoryId] = [n0].[Id]
+ORDER BY [n1].[PublishedAt] DESC
+2026-04-26 11:29:13.790 [INF] HTTP GET /api/news responded 200 in 12.8600 ms
+2026-04-26 11:29:14.612 [INF] Executed DbCommand (2ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [News] AS [n]
+WHERE [n].[IsPublished] = CAST(1 AS bit)
+2026-04-26 11:29:14.616 [INF] Executed DbCommand (3ms) [Parameters=[@__p_0='?' (DbType = Int32), @__p_1='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT [n1].[Id], [n1].[Title], [n1].[Summary], [n1].[ImageUrl], [n1].[Source], [n0].[Name], [n1].[ViewCount], [n1].[PublishedAt]
+FROM (
+    SELECT [n].[Id], [n].[CategoryId], [n].[ImageUrl], [n].[PublishedAt], [n].[Source], [n].[Summary], [n].[Title], [n].[ViewCount]
+    FROM [News] AS [n]
+    WHERE [n].[IsPublished] = CAST(1 AS bit)
+    ORDER BY [n].[PublishedAt] DESC
+    OFFSET @__p_0 ROWS FETCH NEXT @__p_1 ROWS ONLY
+) AS [n1]
+LEFT JOIN [NewsCategories] AS [n0] ON [n1].[CategoryId] = [n0].[Id]
+ORDER BY [n1].[PublishedAt] DESC
+2026-04-26 11:29:14.618 [INF] HTTP GET /api/news responded 200 in 7.9071 ms
+2026-04-26 11:33:28.687 [INF] Application is shutting down...

@@ -104,6 +104,7 @@ public class ChatbotService
         yield return JsonSerializer.Serialize(new { type = "session", userMessageId = userMsg.Id, sessionId });
 
         var responseBuilder = new StringBuilder();
+        bool agentReturnedError = false;
         var agentUrl = _config["AgentService:SupervisorUrl"];
 
         if (!string.IsNullOrEmpty(agentUrl))
@@ -179,6 +180,8 @@ public class ChatbotService
                                 if ((t == "answer" || t == "response_chunk")
                                     && doc.RootElement.TryGetProperty("content", out var cp))
                                     responseBuilder.Append(cp.GetString());
+                                else if (t == "error")
+                                    agentReturnedError = true;
                             }
                         }
                         catch { /* malformed event — skip */ }
@@ -194,8 +197,8 @@ public class ChatbotService
             }
         }
 
-        // ── Fallback when agent produced nothing ──────────────────────────
-        if (responseBuilder.Length == 0)
+        // ── Fallback when agent produced nothing (skip if agent sent an error event) ──
+        if (responseBuilder.Length == 0 && !agentReturnedError)
         {
             var fallback = FallbackResponse(req.Content);
             responseBuilder.Append(fallback);
@@ -203,11 +206,17 @@ public class ChatbotService
         }
 
         // ── Persist assistant message ─────────────────────────────────────
+        var finalContent = responseBuilder.Length > 0
+            ? responseBuilder.ToString()
+            : agentReturnedError
+                ? "[Lỗi xử lý từ hệ thống AI]"
+                : "";
+
         var assistantMsg = new ChatMessage
         {
             SessionId = sessionId,
             Role = "assistant",
-            Content = responseBuilder.ToString(),
+            Content = finalContent,
             Model = "mgsplus-agent",
             CreatedAt = DateTime.UtcNow
         };

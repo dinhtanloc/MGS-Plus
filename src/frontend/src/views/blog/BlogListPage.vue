@@ -19,8 +19,8 @@
       </select>
     </div>
 
-    <div v-if="loading" class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-      <div v-for="i in 6" :key="i" class="card animate-pulse">
+    <div v-if="loading" class="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
+      <div v-for="i in 10" :key="i" class="card animate-pulse">
         <div class="bg-gray-200 h-44 rounded-xl mb-4"></div>
         <div class="bg-gray-200 h-4 rounded mb-2"></div>
         <div class="bg-gray-200 h-4 rounded w-2/3"></div>
@@ -28,7 +28,7 @@
     </div>
 
     <div v-else>
-      <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
+      <div class="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 mb-10">
         <RouterLink v-for="post in posts" :key="post.id" :to="`/blog/${post.slug}`"
           class="card hover:shadow-md hover:border-gray-200 transition-all group">
           <div class="bg-gradient-to-br from-green-50 to-teal-50 h-44 rounded-xl mb-4 overflow-hidden">
@@ -77,7 +77,7 @@ const search = ref('')
 const selectedCategory = ref<number | undefined>()
 const page = ref(1)
 const total = ref(0)
-const pageSize = 9
+const pageSize = 15
 let searchTimer: ReturnType<typeof setTimeout>
 
 const totalPages = computed(() => Math.ceil(total.value / pageSize))
@@ -94,7 +94,7 @@ function debounceSearch() {
 async function loadPosts() {
   loading.value = true
   try {
-    const { data } = await blogApi.list({ categoryId: selectedCategory.value, search: search.value || undefined, page: page.value })
+    const { data } = await blogApi.list({ categoryId: selectedCategory.value, search: search.value || undefined, page: page.value, pageSize })
     posts.value = data.data || []
     total.value = data.total || 0
   } catch { posts.value = [] }

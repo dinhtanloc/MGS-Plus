@@ -12,7 +12,7 @@ from src.agents.core.a2a.schemas import (
 )
 from src.agents.core.config import Settings, get_settings
 from src.agents.api.deps import verify_api_key
-from src.agents.agents.documents.agent import build_documents_agent
+from src.agents.specialists.documents.agent import build_documents_agent
 from src.agents.crews.tasks.document_tasks import retrieve_knowledge_task
 
 from crewai import Crew, Process

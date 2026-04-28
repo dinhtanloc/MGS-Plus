@@ -63,31 +63,30 @@ class Settings(BaseSettings):
 
     # ── LLM ──────────────────────────────────────────────────────────────────
     openai_api_key: str = Field(default="", alias="OPENAI_API_KEY")
+    ollama_api_key: str = Field(default="", alias="OLLAMA_API_KEY")
 
-    # Provider selection: "ollama" (default) or "openai"
+    # Provider selection: "ollama" or "openai"
     llm_provider: str = Field(
         default=_get(_agents, "llm", "provider", default="ollama"),
         alias="LLM_PROVIDER",
     )
 
-    # OpenAI model (used only when llm_provider=openai)
+    # Model name — applies to whichever provider is active
     llm_model: str = Field(
         default=_get(_agents, "llm", "model", default="gpt-4o-mini"),
         alias="LLM_MODEL",
     )
 
-    # Ollama settings (used when llm_provider=ollama)
-    ollama_model: str = Field(
-        default=_get(_agents, "llm", "ollama", "model", default="qwen2.5:7b"),
-        alias="OLLAMA_MODEL",
+    # OpenAI-compatible endpoint (required for Ollama cloud / custom providers)
+    llm_base_url: str = Field(
+        default=_get(_agents, "llm", "base_url", default=""),
+        alias="LLM_BASE_URL",
     )
-    ollama_base_url: str = Field(
-        default=_get(_agents, "llm", "ollama", "base_url", default="http://localhost:11434"),
-        alias="OLLAMA_BASE_URL",
-    )
-    ollama_embedding_model: str = Field(
-        default=_get(_agents, "llm", "ollama", "embedding_model", default="nomic-embed-text"),
-        alias="OLLAMA_EMBEDDING_MODEL",
+
+    # Embedding model
+    llm_embedding_model: str = Field(
+        default=_get(_agents, "llm", "embedding_model", default="nomic-embed-text"),
+        alias="LLM_EMBEDDING_MODEL",
     )
 
     # ── Qdrant (from infra-config.yml) ───────────────────────────────────────
@@ -159,6 +158,10 @@ class Settings(BaseSettings):
         default=_get(_agents, "mcp", "wiki_url") or None,
         alias="MCP_WIKI_URL",
     )
+    mcp_web_url: Optional[str] = Field(
+        default=_get(_agents, "mcp", "web_url") or None,
+        alias="MCP_WEB_URL",
+    )
 
     # ── Agent API key (for service-to-service auth) ──────────────────────────
     agent_api_key: str = Field(default="", alias="AGENT_API_KEY")
@@ -206,33 +209,34 @@ def get_settings() -> Settings:
 
 
 def build_llm(settings: Optional[Settings] = None):
-    """Return a CrewAI ``LLM`` instance configured for the active provider.
+    """Return a CrewAI LLM for any OpenAI-compatible endpoint.
 
-    Provider selection (highest-priority first):
-      1. ``LLM_PROVIDER`` env var
-      2. ``configs/agents-config.yml → llm.provider``
-      3. Default: ``"ollama"``
+    Config (agents-config.yml):
+      llm:
+        provider: openai          # "openai" or "ollama" — controls default base_url
+        model: glm-4.7:cloud      # model name passed to the API
+        base_url: https://...     # override endpoint (optional)
+        embedding_model: nomic-embed-text
 
-    Ollama (``provider=ollama``):
-      Uses LiteLLM's ``ollama/`` prefix.  No API key required.
-      Set ``OLLAMA_MODEL`` (e.g. ``qwen2.5:7b``) and
-      ``OLLAMA_BASE_URL`` (default ``http://localhost:11434``).
-
-    OpenAI (``provider=openai``):
-      Uses ``LLM_MODEL`` and ``OPENAI_API_KEY``.
+    Env vars take priority: LLM_PROVIDER, LLM_MODEL, LLM_BASE_URL, OPENAI_API_KEY.
     """
-    from crewai import LLM  # local import to avoid circular issues at module load
+    from crewai import LLM  # local import — avoids circular issues at module load
 
     cfg = settings or get_settings()
 
-    if cfg.llm_provider == "ollama":
-        return LLM(
-            model=f"ollama/{cfg.ollama_model}",
-            base_url=cfg.ollama_base_url,
-        )
+    # Resolve base_url — always normalise to end with /v1
+    raw = cfg.llm_base_url or ("http://localhost:11434" if cfg.llm_provider == "ollama" else "")
+    if raw:
+        base_url: Optional[str] = raw.rstrip("/") if raw.endswith("/v1") else f"{raw.rstrip('/')}/v1"
+    else:
+        base_url = None
 
-    # Fallback — OpenAI-compatible
+    api_key = cfg.ollama_api_key or cfg.openai_api_key or "ollama"
+    model = cfg.llm_model if cfg.llm_model.startswith("openai/") else f"openai/{cfg.llm_model}"
+
     return LLM(
-        model=cfg.llm_model,
-        api_key=cfg.openai_api_key,
+        model=model,
+        base_url=base_url,
+        api_key=api_key,
+        temperature=0.1,
     )

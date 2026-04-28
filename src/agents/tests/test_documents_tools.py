@@ -9,7 +9,7 @@ from __future__ import annotations
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from src.agents.agents.documents.tools import (
+from src.agents.specialists.documents.tools import (
     MCPSearchTool,
     QdrantSearchTool,
     _run_async,
@@ -20,7 +20,7 @@ from src.agents.agents.documents.tools import (
 
 class TestQdrantSearchTool:
     def _make_tool(self, settings, search_return):
-        with patch("src.agents.agents.documents.tools.get_qdrant_service") as mock_svc_fn:
+        with patch("src.agents.specialists.documents.tools.get_qdrant_service") as mock_svc_fn:
             mock_svc = MagicMock()
             mock_svc.search = AsyncMock(return_value=search_return)
             mock_svc_fn.return_value = mock_svc
@@ -45,7 +45,7 @@ class TestQdrantSearchTool:
         assert result == "No relevant documents found."
 
     def test_search_exception_returns_empty_message(self, settings):
-        with patch("src.agents.agents.documents.tools.get_qdrant_service") as mock_svc_fn:
+        with patch("src.agents.specialists.documents.tools.get_qdrant_service") as mock_svc_fn:
             mock_svc = MagicMock()
             mock_svc.search = AsyncMock(side_effect=ConnectionError("Qdrant down"))
             mock_svc_fn.return_value = mock_svc
@@ -71,7 +71,7 @@ class TestQdrantSearchTool:
         assert call_kwargs["limit"] == 3
 
     def test_tool_name_and_description(self, settings):
-        with patch("src.agents.agents.documents.tools.get_qdrant_service"):
+        with patch("src.agents.specialists.documents.tools.get_qdrant_service"):
             tool = QdrantSearchTool(settings=settings)
         assert tool.name == "qdrant_search"
         assert "vector" in tool.description.lower() or "qdrant" in tool.description.lower()
@@ -90,7 +90,7 @@ class TestMCPSearchTool:
 
     def test_returns_mcp_result_for_wiki(self, settings):
         tool, _ = self._make_tool(settings)
-        with patch("src.agents.agents.documents.tools.MCPClient") as MockMCP:
+        with patch("src.agents.specialists.documents.tools.MCPClient") as MockMCP:
             mock_client = MockMCP.return_value
             search_tool = MagicMock()
             search_tool.name = "search"
@@ -106,7 +106,7 @@ class TestMCPSearchTool:
 
     def test_returns_no_results_when_no_search_tool_on_server(self, settings):
         tool, _ = self._make_tool(settings)
-        with patch("src.agents.agents.documents.tools.MCPClient") as MockMCP:
+        with patch("src.agents.specialists.documents.tools.MCPClient") as MockMCP:
             mock_client = MockMCP.return_value
             mock_client.list_tools = AsyncMock(return_value=[])  # empty tool list
             mock_client.call_tool = AsyncMock(return_value=None)
@@ -115,7 +115,7 @@ class TestMCPSearchTool:
 
     def test_mcp_exception_is_caught_gracefully(self, settings):
         tool, _ = self._make_tool(settings)
-        with patch("src.agents.agents.documents.tools.MCPClient") as MockMCP:
+        with patch("src.agents.specialists.documents.tools.MCPClient") as MockMCP:
             mock_client = MockMCP.return_value
             mock_client.list_tools = AsyncMock(side_effect=ConnectionError("MCP unreachable"))
             result = tool._run("query", "wiki")
@@ -123,7 +123,7 @@ class TestMCPSearchTool:
 
     def test_list_result_joined_with_newlines(self, settings):
         tool, _ = self._make_tool(settings)
-        with patch("src.agents.agents.documents.tools.MCPClient") as MockMCP:
+        with patch("src.agents.specialists.documents.tools.MCPClient") as MockMCP:
             mock_client = MockMCP.return_value
             search_tool = MagicMock()
             search_tool.name = "search"

@@ -1,17 +1,20 @@
 from __future__ import annotations
 
 import json
+import logging
 import queue
 import threading
 from typing import Optional
+
+logger = logging.getLogger(__name__)
 
 from crewai import Crew, Process
 
 from src.agents.core.config import Settings, get_settings
 from src.agents.core.memory.memory_service import MemoryService
-from src.agents.agents.documents.agent import build_documents_agent
-from src.agents.agents.supervisor.agent import build_supervisor_agent
-from src.agents.agents.workflow.agent import build_workflow_agent
+from src.agents.specialists.documents.agent import build_documents_agent
+from src.agents.specialists.supervisor.agent import build_supervisor_agent
+from src.agents.specialists.workflow.agent import build_workflow_agent
 from src.agents.crews.tasks.supervisor_tasks import route_and_respond_task
 
 
@@ -46,10 +49,9 @@ class MainCrew:
             context=context,
         )
         return Crew(
-            agents=[self._documents, self._workflow],
+            agents=[self._supervisor],
             tasks=[task],
-            process=Process.hierarchical,
-            manager_agent=self._supervisor,
+            process=Process.sequential,
             verbose=True,
         )
 
@@ -158,10 +160,9 @@ class MainCrew:
                     context=context,
                 )
                 crew = Crew(
-                    agents=[self._documents, self._workflow],
+                    agents=[self._supervisor],
                     tasks=[task],
-                    process=Process.hierarchical,
-                    manager_agent=self._supervisor,
+                    process=Process.sequential,
                     step_callback=_step_callback,
                     verbose=False,
                 )
@@ -175,6 +176,7 @@ class MainCrew:
 
                 event_q.put(json.dumps({"type": "answer", "content": answer}))
             except Exception as exc:  # noqa: BLE001
+                logger.error("Crew execution failed: %s", exc, exc_info=True)
                 event_q.put(json.dumps({"type": "error", "content": str(exc)}))
             finally:
                 event_q.put(None)  # sentinel — consumer must stop on None
@@ -192,7 +194,7 @@ class MainCrew:
             f"Summarise the following conversation in 3-5 sentences for long-term memory:\n\n"
             f"{transcript}"
         )
-        # Use the supervisor's LLM directly for summarisation
-        summary = self._supervisor.llm.call([{"role": "user", "content": summary_prompt}])
-        self._memory.upsert_long_term(user_id=user_id, summary=str(summary))
+        # crewai.LLM wraps litellm — use completion() for direct inference
+        response = self._supervisor.llm.call(messages=[{"role": "user", "content": summary_prompt}])
+        self._memory.upsert_long_term(user_id=user_id, summary=str(response))
         self._memory.clear_thread(thread_id, user_id)

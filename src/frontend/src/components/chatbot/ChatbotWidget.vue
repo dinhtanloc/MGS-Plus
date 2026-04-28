@@ -146,64 +146,6 @@
       </div>
     </Transition>
 
-    <!-- Guest popup — shown before the toggle button so it appears above -->
-    <Transition name="chatbot">
-      <div v-if="showGuestPopup"
-        class="w-72 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden mb-1">
-        <!-- Gradient header -->
-        <div class="bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-4 relative">
-          <button @click="dismissPopup"
-            class="absolute top-3 right-3 text-white/70 hover:text-white transition-colors">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-            </svg>
-          </button>
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center text-xl">🔒</div>
-            <div>
-              <p class="text-white font-semibold text-sm">Cần đăng nhập</p>
-              <p class="text-blue-200 text-xs">Trợ lý ảo chỉ dành cho thành viên</p>
-            </div>
-          </div>
-        </div>
-
-        <!-- Body -->
-        <div class="px-4 py-4">
-          <p class="text-gray-600 text-sm mb-4">
-            Đăng ký miễn phí để được tư vấn y tế, đặt lịch khám và truy cập hồ sơ sức khỏe của bạn.
-          </p>
-
-          <!-- Features -->
-          <ul class="space-y-2 mb-4">
-            <li v-for="feat in ['Tư vấn y tế 24/7 bằng AI', 'Đặt lịch khám trực tuyến', 'Quản lý hồ sơ sức khỏe']"
-              :key="feat"
-              class="flex items-center gap-2 text-xs text-gray-600">
-              <span class="w-4 h-4 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">✓</span>
-              {{ feat }}
-            </li>
-          </ul>
-
-          <!-- Countdown -->
-          <div class="flex items-center justify-between gap-3">
-            <p class="text-xs text-gray-400">
-              Tự động chuyển hướng sau
-              <span class="font-bold text-blue-600">{{ countdown }}s</span>
-            </p>
-            <div class="flex gap-2">
-              <RouterLink to="/login" @click="dismissPopup"
-                class="px-3 py-1.5 text-xs border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors">
-                Đăng nhập
-              </RouterLink>
-              <button @click="dismissAndRedirect"
-                class="px-3 py-1.5 text-xs bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium">
-                Đăng ký ngay
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </Transition>
-
     <!-- Toggle button -->
     <button @click="toggleChat"
       class="w-14 h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg hover:shadow-xl flex items-center justify-center transition-all duration-200 active:scale-95">
@@ -229,9 +171,6 @@ const router = useRouter()
 
 const inputText = ref('')
 const messagesContainer = ref<HTMLElement>()
-const showGuestPopup = ref(false)
-let redirectTimer: ReturnType<typeof setTimeout> | null = null
-const countdown = ref(3)
 
 const quickQuestions = [
   'Tư vấn BHYT',
@@ -242,16 +181,8 @@ const quickQuestions = [
 ]
 
 async function toggleChat() {
-  // Guest: show login prompt instead of opening chat
   if (!auth.isLoggedIn) {
-    showGuestPopup.value = true
-    countdown.value = 3
-    redirectTimer = setInterval(() => {
-      countdown.value--
-      if (countdown.value <= 0) {
-        dismissAndRedirect()
-      }
-    }, 1000)
+    router.push('/register')
     return
   }
   chatbot.toggle()
@@ -259,17 +190,6 @@ async function toggleChat() {
     await chatbot.initSession()
   }
   await scrollToBottom()
-}
-
-function dismissAndRedirect() {
-  if (redirectTimer) { clearInterval(redirectTimer); redirectTimer = null }
-  showGuestPopup.value = false
-  router.push('/register')
-}
-
-function dismissPopup() {
-  if (redirectTimer) { clearInterval(redirectTimer); redirectTimer = null }
-  showGuestPopup.value = false
 }
 
 async function handleSend() {

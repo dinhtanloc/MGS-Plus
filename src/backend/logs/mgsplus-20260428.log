@@ -1,0 +1,1093 @@
+2026-04-28 00:56:08.750 [INF] Executed DbCommand (12ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT 1
+2026-04-28 00:56:08.770 [INF] Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+2026-04-28 00:56:08.795 [INF] Executed DbCommand (24ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+DECLARE @result int;
+EXEC @result = sp_getapplock @Resource = '__EFMigrationsLock', @LockOwner = 'Session', @LockMode = 'Exclusive';
+SELECT @result
+2026-04-28 00:56:08.817 [INF] Executed DbCommand (4ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+IF OBJECT_ID(N'[__EFMigrationsHistory]') IS NULL
+BEGIN
+    CREATE TABLE [__EFMigrationsHistory] (
+        [MigrationId] nvarchar(150) NOT NULL,
+        [ProductVersion] nvarchar(32) NOT NULL,
+        CONSTRAINT [PK___EFMigrationsHistory] PRIMARY KEY ([MigrationId])
+    );
+END;
+2026-04-28 00:56:08.821 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT 1
+2026-04-28 00:56:08.823 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT OBJECT_ID(N'[__EFMigrationsHistory]');
+2026-04-28 00:56:08.846 [INF] Executed DbCommand (22ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT [MigrationId], [ProductVersion]
+FROM [__EFMigrationsHistory]
+ORDER BY [MigrationId];
+2026-04-28 00:56:08.849 [INF] No migrations were applied. The database is already up to date.
+2026-04-28 00:56:08.853 [INF] Executed DbCommand (2ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+DECLARE @result int;
+EXEC @result = sp_releaseapplock @Resource = '__EFMigrationsLock', @LockOwner = 'Session';
+SELECT @result
+2026-04-28 00:56:08.945 [INF] Executed DbCommand (14ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT CASE
+    WHEN EXISTS (
+        SELECT 1
+        FROM [Users] AS [u]
+        WHERE [u].[Role] = N'Admin') THEN CAST(1 AS bit)
+    ELSE CAST(0 AS bit)
+END
+2026-04-28 00:56:09.008 [INF] Now listening on: http://localhost:5001
+2026-04-28 00:56:09.009 [INF] Application started. Press Ctrl+C to shut down.
+2026-04-28 00:56:09.009 [INF] Hosting environment: Development
+2026-04-28 00:56:09.009 [INF] Content root path: /Users/dinhtanloc/Projects/MGSPlus/src/backend
+2026-04-28 00:56:26.869 [INF] Executed DbCommand (37ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [News] AS [n]
+WHERE [n].[IsPublished] = CAST(1 AS bit)
+2026-04-28 00:56:26.932 [INF] Executed DbCommand (21ms) [Parameters=[@__p_0='?' (DbType = Int32), @__p_1='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT [n1].[Id], [n1].[Title], [n1].[Summary], [n1].[ImageUrl], [n1].[Source], [n0].[Name], [n1].[ViewCount], [n1].[PublishedAt]
+FROM (
+    SELECT [n].[Id], [n].[CategoryId], [n].[ImageUrl], [n].[PublishedAt], [n].[Source], [n].[Summary], [n].[Title], [n].[ViewCount]
+    FROM [News] AS [n]
+    WHERE [n].[IsPublished] = CAST(1 AS bit)
+    ORDER BY [n].[PublishedAt] DESC
+    OFFSET @__p_0 ROWS FETCH NEXT @__p_1 ROWS ONLY
+) AS [n1]
+LEFT JOIN [NewsCategories] AS [n0] ON [n1].[CategoryId] = [n0].[Id]
+ORDER BY [n1].[PublishedAt] DESC
+2026-04-28 00:56:26.950 [INF] HTTP GET /api/news responded 200 in 187.5676 ms
+2026-04-28 00:56:51.360 [INF] Executed DbCommand (13ms) [Parameters=[@__req_Email_0='?' (Size = 256)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [u].[Id], [u].[CreatedAt], [u].[DateOfBirth], [u].[Email], [u].[FirstName], [u].[IsActive], [u].[IsEmailVerified], [u].[LastName], [u].[PasswordHash], [u].[PhoneNumber], [u].[Role], [u].[UpdatedAt]
+FROM [Users] AS [u]
+WHERE [u].[Email] = @__req_Email_0
+2026-04-28 00:56:51.617 [INF] Executed DbCommand (24ms) [Parameters=[@p0='?' (DbType = DateTime2), @p1='?' (DbType = DateTime2), @p2='?' (DbType = Boolean), @p3='?' (Size = 256), @p4='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SET IMPLICIT_TRANSACTIONS OFF;
+SET NOCOUNT ON;
+INSERT INTO [RefreshTokens] ([CreatedAt], [ExpiresAt], [IsRevoked], [Token], [UserId])
+OUTPUT INSERTED.[Id]
+VALUES (@p0, @p1, @p2, @p3, @p4);
+2026-04-28 00:56:51.626 [INF] HTTP POST /api/auth/login responded 200 in 336.7094 ms
+2026-04-28 00:56:51.661 [INF] Executed DbCommand (2ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [News] AS [n]
+WHERE [n].[IsPublished] = CAST(1 AS bit)
+2026-04-28 00:56:51.664 [INF] Executed DbCommand (3ms) [Parameters=[@__p_0='?' (DbType = Int32), @__p_1='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT [n1].[Id], [n1].[Title], [n1].[Summary], [n1].[ImageUrl], [n1].[Source], [n0].[Name], [n1].[ViewCount], [n1].[PublishedAt]
+FROM (
+    SELECT [n].[Id], [n].[CategoryId], [n].[ImageUrl], [n].[PublishedAt], [n].[Source], [n].[Summary], [n].[Title], [n].[ViewCount]
+    FROM [News] AS [n]
+    WHERE [n].[IsPublished] = CAST(1 AS bit)
+    ORDER BY [n].[PublishedAt] DESC
+    OFFSET @__p_0 ROWS FETCH NEXT @__p_1 ROWS ONLY
+) AS [n1]
+LEFT JOIN [NewsCategories] AS [n0] ON [n1].[CategoryId] = [n0].[Id]
+ORDER BY [n1].[PublishedAt] DESC
+2026-04-28 00:56:51.665 [INF] HTTP GET /api/news responded 200 in 24.0121 ms
+2026-04-28 00:56:54.608 [INF] Executed DbCommand (3ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [News] AS [n]
+WHERE [n].[IsPublished] = CAST(1 AS bit)
+2026-04-28 00:56:54.612 [INF] Executed DbCommand (3ms) [Parameters=[@__p_0='?' (DbType = Int32), @__p_1='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT [n1].[Id], [n1].[Title], [n1].[Summary], [n1].[ImageUrl], [n1].[Source], [n0].[Name], [n1].[ViewCount], [n1].[PublishedAt]
+FROM (
+    SELECT [n].[Id], [n].[CategoryId], [n].[ImageUrl], [n].[PublishedAt], [n].[Source], [n].[Summary], [n].[Title], [n].[ViewCount]
+    FROM [News] AS [n]
+    WHERE [n].[IsPublished] = CAST(1 AS bit)
+    ORDER BY [n].[PublishedAt] DESC
+    OFFSET @__p_0 ROWS FETCH NEXT @__p_1 ROWS ONLY
+) AS [n1]
+LEFT JOIN [NewsCategories] AS [n0] ON [n1].[CategoryId] = [n0].[Id]
+ORDER BY [n1].[PublishedAt] DESC
+2026-04-28 00:56:54.617 [INF] HTTP GET /api/news responded 200 in 16.5660 ms
+2026-04-28 00:56:54.654 [INF] Executed DbCommand (21ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT [n].[Id], [n].[Name], [n].[Slug], (
+    SELECT COUNT(*)
+    FROM [News] AS [n0]
+    WHERE [n].[Id] = [n0].[CategoryId] AND [n0].[IsPublished] = CAST(1 AS bit)) AS [Count]
+FROM [NewsCategories] AS [n]
+2026-04-28 00:56:54.656 [INF] HTTP GET /api/news/categories responded 200 in 52.9246 ms
+2026-04-28 00:56:55.347 [INF] Executed DbCommand (13ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [BlogPosts] AS [b]
+WHERE [b].[IsPublished] = CAST(1 AS bit)
+2026-04-28 00:56:55.366 [INF] Executed DbCommand (11ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT [b].[Id], [b].[Name], [b].[Slug], [b].[Description], (
+    SELECT COUNT(*)
+    FROM [BlogPosts] AS [b0]
+    WHERE [b].[Id] = [b0].[CategoryId] AND [b0].[IsPublished] = CAST(1 AS bit)) AS [PostCount]
+FROM [BlogCategories] AS [b]
+2026-04-28 00:56:55.367 [INF] Executed DbCommand (15ms) [Parameters=[@__p_0='?' (DbType = Int32), @__p_1='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT [b0].[Id], [b0].[Title], [b0].[Slug], [b0].[Summary], [b0].[ThumbnailUrl], [b0].[Tags], [b0].[ViewCount], [u].[FirstName] + N' ' + [u].[LastName], [b1].[Name], [b0].[PublishedAt]
+FROM (
+    SELECT [b].[Id], [b].[AuthorId], [b].[CategoryId], [b].[PublishedAt], [b].[Slug], [b].[Summary], [b].[Tags], [b].[ThumbnailUrl], [b].[Title], [b].[ViewCount]
+    FROM [BlogPosts] AS [b]
+    WHERE [b].[IsPublished] = CAST(1 AS bit)
+    ORDER BY [b].[PublishedAt] DESC
+    OFFSET @__p_0 ROWS FETCH NEXT @__p_1 ROWS ONLY
+) AS [b0]
+INNER JOIN [Users] AS [u] ON [b0].[AuthorId] = [u].[Id]
+LEFT JOIN [BlogCategories] AS [b1] ON [b0].[CategoryId] = [b1].[Id]
+ORDER BY [b0].[PublishedAt] DESC
+2026-04-28 00:56:55.368 [INF] HTTP GET /api/blog/categories responded 200 in 42.9629 ms
+2026-04-28 00:56:55.369 [INF] HTTP GET /api/blog responded 200 in 46.0014 ms
+2026-04-28 00:56:58.435 [INF] Executed DbCommand (12ms) [Parameters=[@p0='?' (DbType = DateTime2), @p1='?' (Size = 30), @p2='?' (Size = 100), @p3='?' (DbType = DateTime2), @p4='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SET IMPLICIT_TRANSACTIONS OFF;
+SET NOCOUNT ON;
+INSERT INTO [ChatSessions] ([CreatedAt], [SessionType], [Title], [UpdatedAt], [UserId])
+OUTPUT INSERTED.[Id]
+VALUES (@p0, @p1, @p2, @p3, @p4);
+2026-04-28 00:56:58.447 [INF] HTTP POST /api/chatbot/sessions responded 201 in 54.0772 ms
+2026-04-28 00:57:10.844 [INF] Executed DbCommand (7ms) [Parameters=[@__sessionId_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [c].[Id], [c].[CreatedAt], [c].[SessionType], [c].[Title], [c].[UpdatedAt], [c].[UserId]
+FROM [ChatSessions] AS [c]
+WHERE [c].[Id] = @__sessionId_0
+2026-04-28 00:57:10.869 [INF] Executed DbCommand (11ms) [Parameters=[@p0='?' (Size = 4000), @p1='?' (DbType = DateTime2), @p2='?' (Size = 50), @p3='?' (Size = 20), @p4='?' (DbType = Int32), @p5='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SET IMPLICIT_TRANSACTIONS OFF;
+SET NOCOUNT ON;
+INSERT INTO [ChatMessages] ([Content], [CreatedAt], [Model], [Role], [SessionId], [TokensUsed])
+OUTPUT INSERTED.[Id]
+VALUES (@p0, @p1, @p2, @p3, @p4, @p5);
+2026-04-28 00:57:33.056 [INF] Executed DbCommand (31ms) [Parameters=[@p0='?' (Size = 4000), @p1='?' (DbType = DateTime2), @p2='?' (Size = 50), @p3='?' (Size = 20), @p4='?' (DbType = Int32), @p5='?' (DbType = Int32), @p7='?' (DbType = Int32), @p6='?' (DbType = DateTime2)], CommandType='"Text"', CommandTimeout='30']
+SET NOCOUNT ON;
+INSERT INTO [ChatMessages] ([Content], [CreatedAt], [Model], [Role], [SessionId], [TokensUsed])
+OUTPUT INSERTED.[Id]
+VALUES (@p0, @p1, @p2, @p3, @p4, @p5);
+UPDATE [ChatSessions] SET [UpdatedAt] = @p6
+OUTPUT 1
+WHERE [Id] = @p7;
+2026-04-28 00:57:33.065 [INF] HTTP POST /api/chatbot/sessions/1002/messages/stream responded 200 in 22248.1373 ms
+2026-04-28 01:00:41.376 [INF] Executed DbCommand (13ms) [Parameters=[@__p_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [u].[Id], [u].[CreatedAt], [u].[DateOfBirth], [u].[Email], [u].[FirstName], [u].[IsActive], [u].[IsEmailVerified], [u].[LastName], [u].[PasswordHash], [u].[PhoneNumber], [u].[Role], [u].[UpdatedAt]
+FROM [Users] AS [u]
+WHERE [u].[Id] = @__p_0
+2026-04-28 01:00:41.378 [INF] HTTP GET /api/auth/me responded 200 in 30.8988 ms
+2026-04-28 01:00:41.479 [INF] Executed DbCommand (3ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [BlogPosts] AS [b]
+WHERE [b].[IsPublished] = CAST(1 AS bit)
+2026-04-28 01:00:41.481 [INF] Executed DbCommand (5ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT [b].[Id], [b].[Name], [b].[Slug], [b].[Description], (
+    SELECT COUNT(*)
+    FROM [BlogPosts] AS [b0]
+    WHERE [b].[Id] = [b0].[CategoryId] AND [b0].[IsPublished] = CAST(1 AS bit)) AS [PostCount]
+FROM [BlogCategories] AS [b]
+2026-04-28 01:00:41.481 [INF] HTTP GET /api/blog/categories responded 200 in 6.4179 ms
+2026-04-28 01:00:41.484 [INF] Executed DbCommand (3ms) [Parameters=[@__p_0='?' (DbType = Int32), @__p_1='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT [b0].[Id], [b0].[Title], [b0].[Slug], [b0].[Summary], [b0].[ThumbnailUrl], [b0].[Tags], [b0].[ViewCount], [u].[FirstName] + N' ' + [u].[LastName], [b1].[Name], [b0].[PublishedAt]
+FROM (
+    SELECT [b].[Id], [b].[AuthorId], [b].[CategoryId], [b].[PublishedAt], [b].[Slug], [b].[Summary], [b].[Tags], [b].[ThumbnailUrl], [b].[Title], [b].[ViewCount]
+    FROM [BlogPosts] AS [b]
+    WHERE [b].[IsPublished] = CAST(1 AS bit)
+    ORDER BY [b].[PublishedAt] DESC
+    OFFSET @__p_0 ROWS FETCH NEXT @__p_1 ROWS ONLY
+) AS [b0]
+INNER JOIN [Users] AS [u] ON [b0].[AuthorId] = [u].[Id]
+LEFT JOIN [BlogCategories] AS [b1] ON [b0].[CategoryId] = [b1].[Id]
+ORDER BY [b0].[PublishedAt] DESC
+2026-04-28 01:00:41.485 [INF] HTTP GET /api/blog responded 200 in 10.7374 ms
+2026-04-28 01:00:42.687 [INF] Executed DbCommand (4ms) [Parameters=[@p0='?' (DbType = DateTime2), @p1='?' (Size = 30), @p2='?' (Size = 100), @p3='?' (DbType = DateTime2), @p4='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SET IMPLICIT_TRANSACTIONS OFF;
+SET NOCOUNT ON;
+INSERT INTO [ChatSessions] ([CreatedAt], [SessionType], [Title], [UpdatedAt], [UserId])
+OUTPUT INSERTED.[Id]
+VALUES (@p0, @p1, @p2, @p3, @p4);
+2026-04-28 01:00:42.689 [INF] HTTP POST /api/chatbot/sessions responded 201 in 9.7095 ms
+2026-04-28 01:00:44.755 [INF] Executed DbCommand (3ms) [Parameters=[@__sessionId_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [c].[Id], [c].[CreatedAt], [c].[SessionType], [c].[Title], [c].[UpdatedAt], [c].[UserId]
+FROM [ChatSessions] AS [c]
+WHERE [c].[Id] = @__sessionId_0
+2026-04-28 01:00:44.765 [INF] Executed DbCommand (8ms) [Parameters=[@p0='?' (Size = 4000), @p1='?' (DbType = DateTime2), @p2='?' (Size = 50), @p3='?' (Size = 20), @p4='?' (DbType = Int32), @p5='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SET IMPLICIT_TRANSACTIONS OFF;
+SET NOCOUNT ON;
+INSERT INTO [ChatMessages] ([Content], [CreatedAt], [Model], [Role], [SessionId], [TokensUsed])
+OUTPUT INSERTED.[Id]
+VALUES (@p0, @p1, @p2, @p3, @p4, @p5);
+2026-04-28 01:00:46.234 [INF] Executed DbCommand (1ms) [Parameters=[@p0='?' (Size = 4000), @p1='?' (DbType = DateTime2), @p2='?' (Size = 50), @p3='?' (Size = 20), @p4='?' (DbType = Int32), @p5='?' (DbType = Int32), @p7='?' (DbType = Int32), @p6='?' (DbType = DateTime2)], CommandType='"Text"', CommandTimeout='30']
+SET NOCOUNT ON;
+INSERT INTO [ChatMessages] ([Content], [CreatedAt], [Model], [Role], [SessionId], [TokensUsed])
+OUTPUT INSERTED.[Id]
+VALUES (@p0, @p1, @p2, @p3, @p4, @p5);
+UPDATE [ChatSessions] SET [UpdatedAt] = @p6
+OUTPUT 1
+WHERE [Id] = @p7;
+2026-04-28 01:00:46.236 [INF] HTTP POST /api/chatbot/sessions/1003/messages/stream responded 200 in 1486.8946 ms
+2026-04-28 01:01:18.051 [INF] Executed DbCommand (2ms) [Parameters=[@__sessionId_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [c].[Id], [c].[CreatedAt], [c].[SessionType], [c].[Title], [c].[UpdatedAt], [c].[UserId]
+FROM [ChatSessions] AS [c]
+WHERE [c].[Id] = @__sessionId_0
+2026-04-28 01:01:18.060 [INF] Executed DbCommand (5ms) [Parameters=[@p0='?' (Size = 4000), @p1='?' (DbType = DateTime2), @p2='?' (Size = 50), @p3='?' (Size = 20), @p4='?' (DbType = Int32), @p5='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SET IMPLICIT_TRANSACTIONS OFF;
+SET NOCOUNT ON;
+INSERT INTO [ChatMessages] ([Content], [CreatedAt], [Model], [Role], [SessionId], [TokensUsed])
+OUTPUT INSERTED.[Id]
+VALUES (@p0, @p1, @p2, @p3, @p4, @p5);
+2026-04-28 01:01:37.008 [INF] Executed DbCommand (1ms) [Parameters=[@p0='?' (Size = 4000), @p1='?' (DbType = DateTime2), @p2='?' (Size = 50), @p3='?' (Size = 20), @p4='?' (DbType = Int32), @p5='?' (DbType = Int32), @p7='?' (DbType = Int32), @p6='?' (DbType = DateTime2)], CommandType='"Text"', CommandTimeout='30']
+SET NOCOUNT ON;
+INSERT INTO [ChatMessages] ([Content], [CreatedAt], [Model], [Role], [SessionId], [TokensUsed])
+OUTPUT INSERTED.[Id]
+VALUES (@p0, @p1, @p2, @p3, @p4, @p5);
+UPDATE [ChatSessions] SET [UpdatedAt] = @p6
+OUTPUT 1
+WHERE [Id] = @p7;
+2026-04-28 01:01:37.012 [INF] HTTP POST /api/chatbot/sessions/1003/messages/stream responded 200 in 18965.5335 ms
+2026-04-28 01:07:23.418 [INF] Executed DbCommand (1ms) [Parameters=[@__p_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [u].[Id], [u].[CreatedAt], [u].[DateOfBirth], [u].[Email], [u].[FirstName], [u].[IsActive], [u].[IsEmailVerified], [u].[LastName], [u].[PasswordHash], [u].[PhoneNumber], [u].[Role], [u].[UpdatedAt]
+FROM [Users] AS [u]
+WHERE [u].[Id] = @__p_0
+2026-04-28 01:07:23.419 [INF] HTTP GET /api/auth/me responded 200 in 26.0456 ms
+2026-04-28 01:07:23.538 [INF] Executed DbCommand (3ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT [b].[Id], [b].[Name], [b].[Slug], [b].[Description], (
+    SELECT COUNT(*)
+    FROM [BlogPosts] AS [b0]
+    WHERE [b].[Id] = [b0].[CategoryId] AND [b0].[IsPublished] = CAST(1 AS bit)) AS [PostCount]
+FROM [BlogCategories] AS [b]
+2026-04-28 01:07:23.538 [INF] HTTP GET /api/blog/categories responded 200 in 4.5958 ms
+2026-04-28 01:07:23.554 [INF] Executed DbCommand (2ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [BlogPosts] AS [b]
+WHERE [b].[IsPublished] = CAST(1 AS bit)
+2026-04-28 01:07:23.557 [INF] Executed DbCommand (2ms) [Parameters=[@__p_0='?' (DbType = Int32), @__p_1='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT [b0].[Id], [b0].[Title], [b0].[Slug], [b0].[Summary], [b0].[ThumbnailUrl], [b0].[Tags], [b0].[ViewCount], [u].[FirstName] + N' ' + [u].[LastName], [b1].[Name], [b0].[PublishedAt]
+FROM (
+    SELECT [b].[Id], [b].[AuthorId], [b].[CategoryId], [b].[PublishedAt], [b].[Slug], [b].[Summary], [b].[Tags], [b].[ThumbnailUrl], [b].[Title], [b].[ViewCount]
+    FROM [BlogPosts] AS [b]
+    WHERE [b].[IsPublished] = CAST(1 AS bit)
+    ORDER BY [b].[PublishedAt] DESC
+    OFFSET @__p_0 ROWS FETCH NEXT @__p_1 ROWS ONLY
+) AS [b0]
+INNER JOIN [Users] AS [u] ON [b0].[AuthorId] = [u].[Id]
+LEFT JOIN [BlogCategories] AS [b1] ON [b0].[CategoryId] = [b1].[Id]
+ORDER BY [b0].[PublishedAt] DESC
+2026-04-28 01:07:23.557 [INF] HTTP GET /api/blog responded 200 in 23.5558 ms
+2026-04-28 01:09:56.338 [INF] Executed DbCommand (2ms) [Parameters=[@__p_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [u].[Id], [u].[CreatedAt], [u].[DateOfBirth], [u].[Email], [u].[FirstName], [u].[IsActive], [u].[IsEmailVerified], [u].[LastName], [u].[PasswordHash], [u].[PhoneNumber], [u].[Role], [u].[UpdatedAt]
+FROM [Users] AS [u]
+WHERE [u].[Id] = @__p_0
+2026-04-28 01:09:56.339 [INF] HTTP GET /api/auth/me responded 200 in 5.1415 ms
+2026-04-28 01:09:56.448 [INF] Executed DbCommand (2ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [BlogPosts] AS [b]
+WHERE [b].[IsPublished] = CAST(1 AS bit)
+2026-04-28 01:09:56.448 [INF] Executed DbCommand (2ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT [b].[Id], [b].[Name], [b].[Slug], [b].[Description], (
+    SELECT COUNT(*)
+    FROM [BlogPosts] AS [b0]
+    WHERE [b].[Id] = [b0].[CategoryId] AND [b0].[IsPublished] = CAST(1 AS bit)) AS [PostCount]
+FROM [BlogCategories] AS [b]
+2026-04-28 01:09:56.449 [INF] HTTP GET /api/blog/categories responded 200 in 3.2767 ms
+2026-04-28 01:09:56.451 [INF] Executed DbCommand (2ms) [Parameters=[@__p_0='?' (DbType = Int32), @__p_1='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT [b0].[Id], [b0].[Title], [b0].[Slug], [b0].[Summary], [b0].[ThumbnailUrl], [b0].[Tags], [b0].[ViewCount], [u].[FirstName] + N' ' + [u].[LastName], [b1].[Name], [b0].[PublishedAt]
+FROM (
+    SELECT [b].[Id], [b].[AuthorId], [b].[CategoryId], [b].[PublishedAt], [b].[Slug], [b].[Summary], [b].[Tags], [b].[ThumbnailUrl], [b].[Title], [b].[ViewCount]
+    FROM [BlogPosts] AS [b]
+    WHERE [b].[IsPublished] = CAST(1 AS bit)
+    ORDER BY [b].[PublishedAt] DESC
+    OFFSET @__p_0 ROWS FETCH NEXT @__p_1 ROWS ONLY
+) AS [b0]
+INNER JOIN [Users] AS [u] ON [b0].[AuthorId] = [u].[Id]
+LEFT JOIN [BlogCategories] AS [b1] ON [b0].[CategoryId] = [b1].[Id]
+ORDER BY [b0].[PublishedAt] DESC
+2026-04-28 01:09:56.451 [INF] HTTP GET /api/blog responded 200 in 6.0120 ms
+2026-04-28 01:10:07.795 [INF] Executed DbCommand (5ms) [Parameters=[@__p_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [u].[Id], [u].[CreatedAt], [u].[DateOfBirth], [u].[Email], [u].[FirstName], [u].[IsActive], [u].[IsEmailVerified], [u].[LastName], [u].[PasswordHash], [u].[PhoneNumber], [u].[Role], [u].[UpdatedAt]
+FROM [Users] AS [u]
+WHERE [u].[Id] = @__p_0
+2026-04-28 01:10:07.795 [INF] HTTP GET /api/auth/me responded 200 in 7.8649 ms
+2026-04-28 01:10:07.854 [INF] Executed DbCommand (3ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [BlogPosts] AS [b]
+WHERE [b].[IsPublished] = CAST(1 AS bit)
+2026-04-28 01:10:07.854 [INF] Executed DbCommand (3ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT [b].[Id], [b].[Name], [b].[Slug], [b].[Description], (
+    SELECT COUNT(*)
+    FROM [BlogPosts] AS [b0]
+    WHERE [b].[Id] = [b0].[CategoryId] AND [b0].[IsPublished] = CAST(1 AS bit)) AS [PostCount]
+FROM [BlogCategories] AS [b]
+2026-04-28 01:10:07.855 [INF] HTTP GET /api/blog/categories responded 200 in 4.4043 ms
+2026-04-28 01:10:07.857 [INF] Executed DbCommand (2ms) [Parameters=[@__p_0='?' (DbType = Int32), @__p_1='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT [b0].[Id], [b0].[Title], [b0].[Slug], [b0].[Summary], [b0].[ThumbnailUrl], [b0].[Tags], [b0].[ViewCount], [u].[FirstName] + N' ' + [u].[LastName], [b1].[Name], [b0].[PublishedAt]
+FROM (
+    SELECT [b].[Id], [b].[AuthorId], [b].[CategoryId], [b].[PublishedAt], [b].[Slug], [b].[Summary], [b].[Tags], [b].[ThumbnailUrl], [b].[Title], [b].[ViewCount]
+    FROM [BlogPosts] AS [b]
+    WHERE [b].[IsPublished] = CAST(1 AS bit)
+    ORDER BY [b].[PublishedAt] DESC
+    OFFSET @__p_0 ROWS FETCH NEXT @__p_1 ROWS ONLY
+) AS [b0]
+INNER JOIN [Users] AS [u] ON [b0].[AuthorId] = [u].[Id]
+LEFT JOIN [BlogCategories] AS [b1] ON [b0].[CategoryId] = [b1].[Id]
+ORDER BY [b0].[PublishedAt] DESC
+2026-04-28 01:10:07.858 [INF] HTTP GET /api/blog responded 200 in 6.9161 ms
+2026-04-28 01:10:08.784 [INF] Executed DbCommand (5ms) [Parameters=[@p0='?' (DbType = DateTime2), @p1='?' (Size = 30), @p2='?' (Size = 100), @p3='?' (DbType = DateTime2), @p4='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SET IMPLICIT_TRANSACTIONS OFF;
+SET NOCOUNT ON;
+INSERT INTO [ChatSessions] ([CreatedAt], [SessionType], [Title], [UpdatedAt], [UserId])
+OUTPUT INSERTED.[Id]
+VALUES (@p0, @p1, @p2, @p3, @p4);
+2026-04-28 01:10:08.785 [INF] HTTP POST /api/chatbot/sessions responded 201 in 11.0325 ms
+2026-04-28 01:10:10.904 [INF] Executed DbCommand (3ms) [Parameters=[@__sessionId_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [c].[Id], [c].[CreatedAt], [c].[SessionType], [c].[Title], [c].[UpdatedAt], [c].[UserId]
+FROM [ChatSessions] AS [c]
+WHERE [c].[Id] = @__sessionId_0
+2026-04-28 01:10:10.910 [INF] Executed DbCommand (4ms) [Parameters=[@p0='?' (Size = 4000), @p1='?' (DbType = DateTime2), @p2='?' (Size = 50), @p3='?' (Size = 20), @p4='?' (DbType = Int32), @p5='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SET IMPLICIT_TRANSACTIONS OFF;
+SET NOCOUNT ON;
+INSERT INTO [ChatMessages] ([Content], [CreatedAt], [Model], [Role], [SessionId], [TokensUsed])
+OUTPUT INSERTED.[Id]
+VALUES (@p0, @p1, @p2, @p3, @p4, @p5);
+2026-04-28 01:10:13.374 [INF] Executed DbCommand (3ms) [Parameters=[@p0='?' (Size = 4000), @p1='?' (DbType = DateTime2), @p2='?' (Size = 50), @p3='?' (Size = 20), @p4='?' (DbType = Int32), @p5='?' (DbType = Int32), @p7='?' (DbType = Int32), @p6='?' (DbType = DateTime2)], CommandType='"Text"', CommandTimeout='30']
+SET NOCOUNT ON;
+INSERT INTO [ChatMessages] ([Content], [CreatedAt], [Model], [Role], [SessionId], [TokensUsed])
+OUTPUT INSERTED.[Id]
+VALUES (@p0, @p1, @p2, @p3, @p4, @p5);
+UPDATE [ChatSessions] SET [UpdatedAt] = @p6
+OUTPUT 1
+WHERE [Id] = @p7;
+2026-04-28 01:10:13.376 [INF] HTTP POST /api/chatbot/sessions/1004/messages/stream responded 200 in 2481.7672 ms
+2026-04-28 01:14:32.178 [INF] Executed DbCommand (3ms) [Parameters=[@__p_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [u].[Id], [u].[CreatedAt], [u].[DateOfBirth], [u].[Email], [u].[FirstName], [u].[IsActive], [u].[IsEmailVerified], [u].[LastName], [u].[PasswordHash], [u].[PhoneNumber], [u].[Role], [u].[UpdatedAt]
+FROM [Users] AS [u]
+WHERE [u].[Id] = @__p_0
+2026-04-28 01:14:32.179 [INF] HTTP GET /api/auth/me responded 200 in 4.8622 ms
+2026-04-28 01:14:32.236 [INF] Executed DbCommand (3ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [BlogPosts] AS [b]
+WHERE [b].[IsPublished] = CAST(1 AS bit)
+2026-04-28 01:14:32.236 [INF] Executed DbCommand (3ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT [b].[Id], [b].[Name], [b].[Slug], [b].[Description], (
+    SELECT COUNT(*)
+    FROM [BlogPosts] AS [b0]
+    WHERE [b].[Id] = [b0].[CategoryId] AND [b0].[IsPublished] = CAST(1 AS bit)) AS [PostCount]
+FROM [BlogCategories] AS [b]
+2026-04-28 01:14:32.236 [INF] HTTP GET /api/blog/categories responded 200 in 4.9806 ms
+2026-04-28 01:14:32.239 [INF] Executed DbCommand (2ms) [Parameters=[@__p_0='?' (DbType = Int32), @__p_1='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT [b0].[Id], [b0].[Title], [b0].[Slug], [b0].[Summary], [b0].[ThumbnailUrl], [b0].[Tags], [b0].[ViewCount], [u].[FirstName] + N' ' + [u].[LastName], [b1].[Name], [b0].[PublishedAt]
+FROM (
+    SELECT [b].[Id], [b].[AuthorId], [b].[CategoryId], [b].[PublishedAt], [b].[Slug], [b].[Summary], [b].[Tags], [b].[ThumbnailUrl], [b].[Title], [b].[ViewCount]
+    FROM [BlogPosts] AS [b]
+    WHERE [b].[IsPublished] = CAST(1 AS bit)
+    ORDER BY [b].[PublishedAt] DESC
+    OFFSET @__p_0 ROWS FETCH NEXT @__p_1 ROWS ONLY
+) AS [b0]
+INNER JOIN [Users] AS [u] ON [b0].[AuthorId] = [u].[Id]
+LEFT JOIN [BlogCategories] AS [b1] ON [b0].[CategoryId] = [b1].[Id]
+ORDER BY [b0].[PublishedAt] DESC
+2026-04-28 01:14:32.239 [INF] HTTP GET /api/blog responded 200 in 8.0784 ms
+2026-04-28 01:14:33.193 [INF] Executed DbCommand (3ms) [Parameters=[@p0='?' (DbType = DateTime2), @p1='?' (Size = 30), @p2='?' (Size = 100), @p3='?' (DbType = DateTime2), @p4='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SET IMPLICIT_TRANSACTIONS OFF;
+SET NOCOUNT ON;
+INSERT INTO [ChatSessions] ([CreatedAt], [SessionType], [Title], [UpdatedAt], [UserId])
+OUTPUT INSERTED.[Id]
+VALUES (@p0, @p1, @p2, @p3, @p4);
+2026-04-28 01:14:33.194 [INF] HTTP POST /api/chatbot/sessions responded 201 in 5.1870 ms
+2026-04-28 01:14:35.084 [INF] Executed DbCommand (4ms) [Parameters=[@__sessionId_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [c].[Id], [c].[CreatedAt], [c].[SessionType], [c].[Title], [c].[UpdatedAt], [c].[UserId]
+FROM [ChatSessions] AS [c]
+WHERE [c].[Id] = @__sessionId_0
+2026-04-28 01:14:35.092 [INF] Executed DbCommand (6ms) [Parameters=[@p0='?' (Size = 4000), @p1='?' (DbType = DateTime2), @p2='?' (Size = 50), @p3='?' (Size = 20), @p4='?' (DbType = Int32), @p5='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SET IMPLICIT_TRANSACTIONS OFF;
+SET NOCOUNT ON;
+INSERT INTO [ChatMessages] ([Content], [CreatedAt], [Model], [Role], [SessionId], [TokensUsed])
+OUTPUT INSERTED.[Id]
+VALUES (@p0, @p1, @p2, @p3, @p4, @p5);
+2026-04-28 01:14:38.173 [INF] Executed DbCommand (2ms) [Parameters=[@p0='?' (Size = 4000), @p1='?' (DbType = DateTime2), @p2='?' (Size = 50), @p3='?' (Size = 20), @p4='?' (DbType = Int32), @p5='?' (DbType = Int32), @p7='?' (DbType = Int32), @p6='?' (DbType = DateTime2)], CommandType='"Text"', CommandTimeout='30']
+SET NOCOUNT ON;
+INSERT INTO [ChatMessages] ([Content], [CreatedAt], [Model], [Role], [SessionId], [TokensUsed])
+OUTPUT INSERTED.[Id]
+VALUES (@p0, @p1, @p2, @p3, @p4, @p5);
+UPDATE [ChatSessions] SET [UpdatedAt] = @p6
+OUTPUT 1
+WHERE [Id] = @p7;
+2026-04-28 01:14:38.175 [INF] HTTP POST /api/chatbot/sessions/1005/messages/stream responded 200 in 3100.1832 ms
+2026-04-28 01:15:14.850 [INF] Executed DbCommand (3ms) [Parameters=[@__p_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [u].[Id], [u].[CreatedAt], [u].[DateOfBirth], [u].[Email], [u].[FirstName], [u].[IsActive], [u].[IsEmailVerified], [u].[LastName], [u].[PasswordHash], [u].[PhoneNumber], [u].[Role], [u].[UpdatedAt]
+FROM [Users] AS [u]
+WHERE [u].[Id] = @__p_0
+2026-04-28 01:15:14.851 [INF] HTTP GET /api/auth/me responded 200 in 5.7228 ms
+2026-04-28 01:15:14.884 [INF] Executed DbCommand (2ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [BlogPosts] AS [b]
+WHERE [b].[IsPublished] = CAST(1 AS bit)
+2026-04-28 01:15:14.884 [INF] Executed DbCommand (2ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT [b].[Id], [b].[Name], [b].[Slug], [b].[Description], (
+    SELECT COUNT(*)
+    FROM [BlogPosts] AS [b0]
+    WHERE [b].[Id] = [b0].[CategoryId] AND [b0].[IsPublished] = CAST(1 AS bit)) AS [PostCount]
+FROM [BlogCategories] AS [b]
+2026-04-28 01:15:14.884 [INF] HTTP GET /api/blog/categories responded 200 in 4.1248 ms
+2026-04-28 01:15:14.887 [INF] Executed DbCommand (2ms) [Parameters=[@__p_0='?' (DbType = Int32), @__p_1='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT [b0].[Id], [b0].[Title], [b0].[Slug], [b0].[Summary], [b0].[ThumbnailUrl], [b0].[Tags], [b0].[ViewCount], [u].[FirstName] + N' ' + [u].[LastName], [b1].[Name], [b0].[PublishedAt]
+FROM (
+    SELECT [b].[Id], [b].[AuthorId], [b].[CategoryId], [b].[PublishedAt], [b].[Slug], [b].[Summary], [b].[Tags], [b].[ThumbnailUrl], [b].[Title], [b].[ViewCount]
+    FROM [BlogPosts] AS [b]
+    WHERE [b].[IsPublished] = CAST(1 AS bit)
+    ORDER BY [b].[PublishedAt] DESC
+    OFFSET @__p_0 ROWS FETCH NEXT @__p_1 ROWS ONLY
+) AS [b0]
+INNER JOIN [Users] AS [u] ON [b0].[AuthorId] = [u].[Id]
+LEFT JOIN [BlogCategories] AS [b1] ON [b0].[CategoryId] = [b1].[Id]
+ORDER BY [b0].[PublishedAt] DESC
+2026-04-28 01:15:14.887 [INF] HTTP GET /api/blog responded 200 in 6.8665 ms
+2026-04-28 01:15:16.241 [INF] Executed DbCommand (6ms) [Parameters=[@p0='?' (DbType = DateTime2), @p1='?' (Size = 30), @p2='?' (Size = 100), @p3='?' (DbType = DateTime2), @p4='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SET IMPLICIT_TRANSACTIONS OFF;
+SET NOCOUNT ON;
+INSERT INTO [ChatSessions] ([CreatedAt], [SessionType], [Title], [UpdatedAt], [UserId])
+OUTPUT INSERTED.[Id]
+VALUES (@p0, @p1, @p2, @p3, @p4);
+2026-04-28 01:15:16.242 [INF] HTTP POST /api/chatbot/sessions responded 201 in 8.8157 ms
+2026-04-28 01:15:18.199 [INF] Executed DbCommand (2ms) [Parameters=[@__sessionId_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [c].[Id], [c].[CreatedAt], [c].[SessionType], [c].[Title], [c].[UpdatedAt], [c].[UserId]
+FROM [ChatSessions] AS [c]
+WHERE [c].[Id] = @__sessionId_0
+2026-04-28 01:15:18.207 [INF] Executed DbCommand (7ms) [Parameters=[@p0='?' (Size = 4000), @p1='?' (DbType = DateTime2), @p2='?' (Size = 50), @p3='?' (Size = 20), @p4='?' (DbType = Int32), @p5='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SET IMPLICIT_TRANSACTIONS OFF;
+SET NOCOUNT ON;
+INSERT INTO [ChatMessages] ([Content], [CreatedAt], [Model], [Role], [SessionId], [TokensUsed])
+OUTPUT INSERTED.[Id]
+VALUES (@p0, @p1, @p2, @p3, @p4, @p5);
+2026-04-28 01:15:19.663 [INF] Executed DbCommand (3ms) [Parameters=[@p0='?' (Size = 4000), @p1='?' (DbType = DateTime2), @p2='?' (Size = 50), @p3='?' (Size = 20), @p4='?' (DbType = Int32), @p5='?' (DbType = Int32), @p7='?' (DbType = Int32), @p6='?' (DbType = DateTime2)], CommandType='"Text"', CommandTimeout='30']
+SET NOCOUNT ON;
+INSERT INTO [ChatMessages] ([Content], [CreatedAt], [Model], [Role], [SessionId], [TokensUsed])
+OUTPUT INSERTED.[Id]
+VALUES (@p0, @p1, @p2, @p3, @p4, @p5);
+UPDATE [ChatSessions] SET [UpdatedAt] = @p6
+OUTPUT 1
+WHERE [Id] = @p7;
+2026-04-28 01:15:19.668 [INF] HTTP POST /api/chatbot/sessions/1006/messages/stream responded 200 in 1473.6757 ms
+2026-04-28 01:19:23.857 [INF] Executed DbCommand (12ms) [Parameters=[@__p_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [u].[Id], [u].[CreatedAt], [u].[DateOfBirth], [u].[Email], [u].[FirstName], [u].[IsActive], [u].[IsEmailVerified], [u].[LastName], [u].[PasswordHash], [u].[PhoneNumber], [u].[Role], [u].[UpdatedAt]
+FROM [Users] AS [u]
+WHERE [u].[Id] = @__p_0
+2026-04-28 01:19:23.858 [INF] HTTP GET /api/auth/me responded 200 in 14.3369 ms
+2026-04-28 01:19:23.991 [INF] Executed DbCommand (2ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT [b].[Id], [b].[Name], [b].[Slug], [b].[Description], (
+    SELECT COUNT(*)
+    FROM [BlogPosts] AS [b0]
+    WHERE [b].[Id] = [b0].[CategoryId] AND [b0].[IsPublished] = CAST(1 AS bit)) AS [PostCount]
+FROM [BlogCategories] AS [b]
+2026-04-28 01:19:23.991 [INF] Executed DbCommand (2ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [BlogPosts] AS [b]
+WHERE [b].[IsPublished] = CAST(1 AS bit)
+2026-04-28 01:19:23.992 [INF] HTTP GET /api/blog/categories responded 200 in 3.2085 ms
+2026-04-28 01:19:23.994 [INF] Executed DbCommand (2ms) [Parameters=[@__p_0='?' (DbType = Int32), @__p_1='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT [b0].[Id], [b0].[Title], [b0].[Slug], [b0].[Summary], [b0].[ThumbnailUrl], [b0].[Tags], [b0].[ViewCount], [u].[FirstName] + N' ' + [u].[LastName], [b1].[Name], [b0].[PublishedAt]
+FROM (
+    SELECT [b].[Id], [b].[AuthorId], [b].[CategoryId], [b].[PublishedAt], [b].[Slug], [b].[Summary], [b].[Tags], [b].[ThumbnailUrl], [b].[Title], [b].[ViewCount]
+    FROM [BlogPosts] AS [b]
+    WHERE [b].[IsPublished] = CAST(1 AS bit)
+    ORDER BY [b].[PublishedAt] DESC
+    OFFSET @__p_0 ROWS FETCH NEXT @__p_1 ROWS ONLY
+) AS [b0]
+INNER JOIN [Users] AS [u] ON [b0].[AuthorId] = [u].[Id]
+LEFT JOIN [BlogCategories] AS [b1] ON [b0].[CategoryId] = [b1].[Id]
+ORDER BY [b0].[PublishedAt] DESC
+2026-04-28 01:19:23.994 [INF] HTTP GET /api/blog responded 200 in 5.7400 ms
+2026-04-28 01:19:24.670 [INF] Executed DbCommand (6ms) [Parameters=[@__p_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [u].[Id], [u].[CreatedAt], [u].[DateOfBirth], [u].[Email], [u].[FirstName], [u].[IsActive], [u].[IsEmailVerified], [u].[LastName], [u].[PasswordHash], [u].[PhoneNumber], [u].[Role], [u].[UpdatedAt]
+FROM [Users] AS [u]
+WHERE [u].[Id] = @__p_0
+2026-04-28 01:19:24.671 [INF] HTTP GET /api/auth/me responded 200 in 9.9848 ms
+2026-04-28 01:19:24.730 [INF] Executed DbCommand (2ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT [b].[Id], [b].[Name], [b].[Slug], [b].[Description], (
+    SELECT COUNT(*)
+    FROM [BlogPosts] AS [b0]
+    WHERE [b].[Id] = [b0].[CategoryId] AND [b0].[IsPublished] = CAST(1 AS bit)) AS [PostCount]
+FROM [BlogCategories] AS [b]
+2026-04-28 01:19:24.730 [INF] Executed DbCommand (2ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [BlogPosts] AS [b]
+WHERE [b].[IsPublished] = CAST(1 AS bit)
+2026-04-28 01:19:24.731 [INF] HTTP GET /api/blog/categories responded 200 in 3.7903 ms
+2026-04-28 01:19:24.734 [INF] Executed DbCommand (3ms) [Parameters=[@__p_0='?' (DbType = Int32), @__p_1='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT [b0].[Id], [b0].[Title], [b0].[Slug], [b0].[Summary], [b0].[ThumbnailUrl], [b0].[Tags], [b0].[ViewCount], [u].[FirstName] + N' ' + [u].[LastName], [b1].[Name], [b0].[PublishedAt]
+FROM (
+    SELECT [b].[Id], [b].[AuthorId], [b].[CategoryId], [b].[PublishedAt], [b].[Slug], [b].[Summary], [b].[Tags], [b].[ThumbnailUrl], [b].[Title], [b].[ViewCount]
+    FROM [BlogPosts] AS [b]
+    WHERE [b].[IsPublished] = CAST(1 AS bit)
+    ORDER BY [b].[PublishedAt] DESC
+    OFFSET @__p_0 ROWS FETCH NEXT @__p_1 ROWS ONLY
+) AS [b0]
+INNER JOIN [Users] AS [u] ON [b0].[AuthorId] = [u].[Id]
+LEFT JOIN [BlogCategories] AS [b1] ON [b0].[CategoryId] = [b1].[Id]
+ORDER BY [b0].[PublishedAt] DESC
+2026-04-28 01:19:24.735 [INF] HTTP GET /api/blog responded 200 in 7.3965 ms
+2026-04-28 01:19:26.016 [INF] Executed DbCommand (4ms) [Parameters=[@p0='?' (DbType = DateTime2), @p1='?' (Size = 30), @p2='?' (Size = 100), @p3='?' (DbType = DateTime2), @p4='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SET IMPLICIT_TRANSACTIONS OFF;
+SET NOCOUNT ON;
+INSERT INTO [ChatSessions] ([CreatedAt], [SessionType], [Title], [UpdatedAt], [UserId])
+OUTPUT INSERTED.[Id]
+VALUES (@p0, @p1, @p2, @p3, @p4);
+2026-04-28 01:19:26.017 [INF] HTTP POST /api/chatbot/sessions responded 201 in 7.1596 ms
+2026-04-28 01:19:28.259 [INF] Executed DbCommand (3ms) [Parameters=[@__sessionId_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [c].[Id], [c].[CreatedAt], [c].[SessionType], [c].[Title], [c].[UpdatedAt], [c].[UserId]
+FROM [ChatSessions] AS [c]
+WHERE [c].[Id] = @__sessionId_0
+2026-04-28 01:19:28.266 [INF] Executed DbCommand (6ms) [Parameters=[@p0='?' (Size = 4000), @p1='?' (DbType = DateTime2), @p2='?' (Size = 50), @p3='?' (Size = 20), @p4='?' (DbType = Int32), @p5='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SET IMPLICIT_TRANSACTIONS OFF;
+SET NOCOUNT ON;
+INSERT INTO [ChatMessages] ([Content], [CreatedAt], [Model], [Role], [SessionId], [TokensUsed])
+OUTPUT INSERTED.[Id]
+VALUES (@p0, @p1, @p2, @p3, @p4, @p5);
+2026-04-28 01:19:32.392 [INF] Executed DbCommand (2ms) [Parameters=[@p0='?' (Size = 4000), @p1='?' (DbType = DateTime2), @p2='?' (Size = 50), @p3='?' (Size = 20), @p4='?' (DbType = Int32), @p5='?' (DbType = Int32), @p7='?' (DbType = Int32), @p6='?' (DbType = DateTime2)], CommandType='"Text"', CommandTimeout='30']
+SET NOCOUNT ON;
+INSERT INTO [ChatMessages] ([Content], [CreatedAt], [Model], [Role], [SessionId], [TokensUsed])
+OUTPUT INSERTED.[Id]
+VALUES (@p0, @p1, @p2, @p3, @p4, @p5);
+UPDATE [ChatSessions] SET [UpdatedAt] = @p6
+OUTPUT 1
+WHERE [Id] = @p7;
+2026-04-28 01:19:32.394 [INF] HTTP POST /api/chatbot/sessions/1007/messages/stream responded 200 in 4139.0130 ms
+2026-04-28 01:22:43.412 [INF] Executed DbCommand (2ms) [Parameters=[@__p_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [u].[Id], [u].[CreatedAt], [u].[DateOfBirth], [u].[Email], [u].[FirstName], [u].[IsActive], [u].[IsEmailVerified], [u].[LastName], [u].[PasswordHash], [u].[PhoneNumber], [u].[Role], [u].[UpdatedAt]
+FROM [Users] AS [u]
+WHERE [u].[Id] = @__p_0
+2026-04-28 01:22:43.413 [INF] HTTP GET /api/auth/me responded 200 in 3.5289 ms
+2026-04-28 01:22:43.463 [INF] Executed DbCommand (2ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [BlogPosts] AS [b]
+WHERE [b].[IsPublished] = CAST(1 AS bit)
+2026-04-28 01:22:43.463 [INF] Executed DbCommand (2ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT [b].[Id], [b].[Name], [b].[Slug], [b].[Description], (
+    SELECT COUNT(*)
+    FROM [BlogPosts] AS [b0]
+    WHERE [b].[Id] = [b0].[CategoryId] AND [b0].[IsPublished] = CAST(1 AS bit)) AS [PostCount]
+FROM [BlogCategories] AS [b]
+2026-04-28 01:22:43.463 [INF] HTTP GET /api/blog/categories responded 200 in 3.7085 ms
+2026-04-28 01:22:43.466 [INF] Executed DbCommand (2ms) [Parameters=[@__p_0='?' (DbType = Int32), @__p_1='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT [b0].[Id], [b0].[Title], [b0].[Slug], [b0].[Summary], [b0].[ThumbnailUrl], [b0].[Tags], [b0].[ViewCount], [u].[FirstName] + N' ' + [u].[LastName], [b1].[Name], [b0].[PublishedAt]
+FROM (
+    SELECT [b].[Id], [b].[AuthorId], [b].[CategoryId], [b].[PublishedAt], [b].[Slug], [b].[Summary], [b].[Tags], [b].[ThumbnailUrl], [b].[Title], [b].[ViewCount]
+    FROM [BlogPosts] AS [b]
+    WHERE [b].[IsPublished] = CAST(1 AS bit)
+    ORDER BY [b].[PublishedAt] DESC
+    OFFSET @__p_0 ROWS FETCH NEXT @__p_1 ROWS ONLY
+) AS [b0]
+INNER JOIN [Users] AS [u] ON [b0].[AuthorId] = [u].[Id]
+LEFT JOIN [BlogCategories] AS [b1] ON [b0].[CategoryId] = [b1].[Id]
+ORDER BY [b0].[PublishedAt] DESC
+2026-04-28 01:22:43.466 [INF] HTTP GET /api/blog responded 200 in 6.9672 ms
+2026-04-28 01:22:44.646 [INF] Executed DbCommand (4ms) [Parameters=[@p0='?' (DbType = DateTime2), @p1='?' (Size = 30), @p2='?' (Size = 100), @p3='?' (DbType = DateTime2), @p4='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SET IMPLICIT_TRANSACTIONS OFF;
+SET NOCOUNT ON;
+INSERT INTO [ChatSessions] ([CreatedAt], [SessionType], [Title], [UpdatedAt], [UserId])
+OUTPUT INSERTED.[Id]
+VALUES (@p0, @p1, @p2, @p3, @p4);
+2026-04-28 01:22:44.646 [INF] HTTP POST /api/chatbot/sessions responded 201 in 10.1668 ms
+2026-04-28 01:22:46.474 [INF] Executed DbCommand (3ms) [Parameters=[@__sessionId_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [c].[Id], [c].[CreatedAt], [c].[SessionType], [c].[Title], [c].[UpdatedAt], [c].[UserId]
+FROM [ChatSessions] AS [c]
+WHERE [c].[Id] = @__sessionId_0
+2026-04-28 01:22:46.482 [INF] Executed DbCommand (7ms) [Parameters=[@p0='?' (Size = 4000), @p1='?' (DbType = DateTime2), @p2='?' (Size = 50), @p3='?' (Size = 20), @p4='?' (DbType = Int32), @p5='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SET IMPLICIT_TRANSACTIONS OFF;
+SET NOCOUNT ON;
+INSERT INTO [ChatMessages] ([Content], [CreatedAt], [Model], [Role], [SessionId], [TokensUsed])
+OUTPUT INSERTED.[Id]
+VALUES (@p0, @p1, @p2, @p3, @p4, @p5);
+2026-04-28 01:22:48.933 [INF] Executed DbCommand (2ms) [Parameters=[@p0='?' (Size = 4000), @p1='?' (DbType = DateTime2), @p2='?' (Size = 50), @p3='?' (Size = 20), @p4='?' (DbType = Int32), @p5='?' (DbType = Int32), @p7='?' (DbType = Int32), @p6='?' (DbType = DateTime2)], CommandType='"Text"', CommandTimeout='30']
+SET NOCOUNT ON;
+INSERT INTO [ChatMessages] ([Content], [CreatedAt], [Model], [Role], [SessionId], [TokensUsed])
+OUTPUT INSERTED.[Id]
+VALUES (@p0, @p1, @p2, @p3, @p4, @p5);
+UPDATE [ChatSessions] SET [UpdatedAt] = @p6
+OUTPUT 1
+WHERE [Id] = @p7;
+2026-04-28 01:22:48.936 [INF] HTTP POST /api/chatbot/sessions/1008/messages/stream responded 200 in 2466.7733 ms
+2026-04-28 01:25:09.786 [INF] Executed DbCommand (3ms) [Parameters=[@__sessionId_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [c].[Id], [c].[CreatedAt], [c].[SessionType], [c].[Title], [c].[UpdatedAt], [c].[UserId]
+FROM [ChatSessions] AS [c]
+WHERE [c].[Id] = @__sessionId_0
+2026-04-28 01:25:09.795 [INF] Executed DbCommand (8ms) [Parameters=[@p0='?' (Size = 4000), @p1='?' (DbType = DateTime2), @p2='?' (Size = 50), @p3='?' (Size = 20), @p4='?' (DbType = Int32), @p5='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SET IMPLICIT_TRANSACTIONS OFF;
+SET NOCOUNT ON;
+INSERT INTO [ChatMessages] ([Content], [CreatedAt], [Model], [Role], [SessionId], [TokensUsed])
+OUTPUT INSERTED.[Id]
+VALUES (@p0, @p1, @p2, @p3, @p4, @p5);
+2026-04-28 01:25:10.412 [INF] Executed DbCommand (2ms) [Parameters=[@p0='?' (Size = 4000), @p1='?' (DbType = DateTime2), @p2='?' (Size = 50), @p3='?' (Size = 20), @p4='?' (DbType = Int32), @p5='?' (DbType = Int32), @p7='?' (DbType = Int32), @p6='?' (DbType = DateTime2)], CommandType='"Text"', CommandTimeout='30']
+SET NOCOUNT ON;
+INSERT INTO [ChatMessages] ([Content], [CreatedAt], [Model], [Role], [SessionId], [TokensUsed])
+OUTPUT INSERTED.[Id]
+VALUES (@p0, @p1, @p2, @p3, @p4, @p5);
+UPDATE [ChatSessions] SET [UpdatedAt] = @p6
+OUTPUT 1
+WHERE [Id] = @p7;
+2026-04-28 01:25:10.415 [INF] HTTP POST /api/chatbot/sessions/1008/messages/stream responded 200 in 632.8042 ms
+2026-04-28 01:30:09.863 [INF] Executed DbCommand (1ms) [Parameters=[@__p_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [u].[Id], [u].[CreatedAt], [u].[DateOfBirth], [u].[Email], [u].[FirstName], [u].[IsActive], [u].[IsEmailVerified], [u].[LastName], [u].[PasswordHash], [u].[PhoneNumber], [u].[Role], [u].[UpdatedAt]
+FROM [Users] AS [u]
+WHERE [u].[Id] = @__p_0
+2026-04-28 01:30:09.864 [INF] HTTP GET /api/auth/me responded 200 in 22.0885 ms
+2026-04-28 01:30:09.907 [INF] Executed DbCommand (3ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [BlogPosts] AS [b]
+WHERE [b].[IsPublished] = CAST(1 AS bit)
+2026-04-28 01:30:09.909 [INF] Executed DbCommand (1ms) [Parameters=[@__p_0='?' (DbType = Int32), @__p_1='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT [b0].[Id], [b0].[Title], [b0].[Slug], [b0].[Summary], [b0].[ThumbnailUrl], [b0].[Tags], [b0].[ViewCount], [u].[FirstName] + N' ' + [u].[LastName], [b1].[Name], [b0].[PublishedAt]
+FROM (
+    SELECT [b].[Id], [b].[AuthorId], [b].[CategoryId], [b].[PublishedAt], [b].[Slug], [b].[Summary], [b].[Tags], [b].[ThumbnailUrl], [b].[Title], [b].[ViewCount]
+    FROM [BlogPosts] AS [b]
+    WHERE [b].[IsPublished] = CAST(1 AS bit)
+    ORDER BY [b].[PublishedAt] DESC
+    OFFSET @__p_0 ROWS FETCH NEXT @__p_1 ROWS ONLY
+) AS [b0]
+INNER JOIN [Users] AS [u] ON [b0].[AuthorId] = [u].[Id]
+LEFT JOIN [BlogCategories] AS [b1] ON [b0].[CategoryId] = [b1].[Id]
+ORDER BY [b0].[PublishedAt] DESC
+2026-04-28 01:30:09.909 [INF] HTTP GET /api/blog responded 200 in 6.3475 ms
+2026-04-28 01:30:09.922 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT [b].[Id], [b].[Name], [b].[Slug], [b].[Description], (
+    SELECT COUNT(*)
+    FROM [BlogPosts] AS [b0]
+    WHERE [b].[Id] = [b0].[CategoryId] AND [b0].[IsPublished] = CAST(1 AS bit)) AS [PostCount]
+FROM [BlogCategories] AS [b]
+2026-04-28 01:30:09.922 [INF] HTTP GET /api/blog/categories responded 200 in 19.3768 ms
+2026-04-28 01:30:11.037 [INF] Executed DbCommand (5ms) [Parameters=[@p0='?' (DbType = DateTime2), @p1='?' (Size = 30), @p2='?' (Size = 100), @p3='?' (DbType = DateTime2), @p4='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SET IMPLICIT_TRANSACTIONS OFF;
+SET NOCOUNT ON;
+INSERT INTO [ChatSessions] ([CreatedAt], [SessionType], [Title], [UpdatedAt], [UserId])
+OUTPUT INSERTED.[Id]
+VALUES (@p0, @p1, @p2, @p3, @p4);
+2026-04-28 01:30:11.038 [INF] HTTP POST /api/chatbot/sessions responded 201 in 7.2290 ms
+2026-04-28 01:30:12.769 [INF] Executed DbCommand (3ms) [Parameters=[@__sessionId_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [c].[Id], [c].[CreatedAt], [c].[SessionType], [c].[Title], [c].[UpdatedAt], [c].[UserId]
+FROM [ChatSessions] AS [c]
+WHERE [c].[Id] = @__sessionId_0
+2026-04-28 01:30:12.776 [INF] Executed DbCommand (6ms) [Parameters=[@p0='?' (Size = 4000), @p1='?' (DbType = DateTime2), @p2='?' (Size = 50), @p3='?' (Size = 20), @p4='?' (DbType = Int32), @p5='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SET IMPLICIT_TRANSACTIONS OFF;
+SET NOCOUNT ON;
+INSERT INTO [ChatMessages] ([Content], [CreatedAt], [Model], [Role], [SessionId], [TokensUsed])
+OUTPUT INSERTED.[Id]
+VALUES (@p0, @p1, @p2, @p3, @p4, @p5);
+2026-04-28 01:30:13.439 [INF] Executed DbCommand (1ms) [Parameters=[@p0='?' (Size = 4000), @p1='?' (DbType = DateTime2), @p2='?' (Size = 50), @p3='?' (Size = 20), @p4='?' (DbType = Int32), @p5='?' (DbType = Int32), @p7='?' (DbType = Int32), @p6='?' (DbType = DateTime2)], CommandType='"Text"', CommandTimeout='30']
+SET NOCOUNT ON;
+INSERT INTO [ChatMessages] ([Content], [CreatedAt], [Model], [Role], [SessionId], [TokensUsed])
+OUTPUT INSERTED.[Id]
+VALUES (@p0, @p1, @p2, @p3, @p4, @p5);
+UPDATE [ChatSessions] SET [UpdatedAt] = @p6
+OUTPUT 1
+WHERE [Id] = @p7;
+2026-04-28 01:30:13.440 [INF] HTTP POST /api/chatbot/sessions/1009/messages/stream responded 200 in 676.4299 ms
+2026-04-28 01:30:35.748 [INF] Executed DbCommand (2ms) [Parameters=[@__p_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [u].[Id], [u].[CreatedAt], [u].[DateOfBirth], [u].[Email], [u].[FirstName], [u].[IsActive], [u].[IsEmailVerified], [u].[LastName], [u].[PasswordHash], [u].[PhoneNumber], [u].[Role], [u].[UpdatedAt]
+FROM [Users] AS [u]
+WHERE [u].[Id] = @__p_0
+2026-04-28 01:30:35.748 [INF] HTTP GET /api/auth/me responded 200 in 2.9551 ms
+2026-04-28 01:30:35.775 [INF] Executed DbCommand (3ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [BlogPosts] AS [b]
+WHERE [b].[IsPublished] = CAST(1 AS bit)
+2026-04-28 01:30:35.775 [INF] Executed DbCommand (3ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT [b].[Id], [b].[Name], [b].[Slug], [b].[Description], (
+    SELECT COUNT(*)
+    FROM [BlogPosts] AS [b0]
+    WHERE [b].[Id] = [b0].[CategoryId] AND [b0].[IsPublished] = CAST(1 AS bit)) AS [PostCount]
+FROM [BlogCategories] AS [b]
+2026-04-28 01:30:35.775 [INF] HTTP GET /api/blog/categories responded 200 in 3.9168 ms
+2026-04-28 01:30:35.778 [INF] Executed DbCommand (2ms) [Parameters=[@__p_0='?' (DbType = Int32), @__p_1='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT [b0].[Id], [b0].[Title], [b0].[Slug], [b0].[Summary], [b0].[ThumbnailUrl], [b0].[Tags], [b0].[ViewCount], [u].[FirstName] + N' ' + [u].[LastName], [b1].[Name], [b0].[PublishedAt]
+FROM (
+    SELECT [b].[Id], [b].[AuthorId], [b].[CategoryId], [b].[PublishedAt], [b].[Slug], [b].[Summary], [b].[Tags], [b].[ThumbnailUrl], [b].[Title], [b].[ViewCount]
+    FROM [BlogPosts] AS [b]
+    WHERE [b].[IsPublished] = CAST(1 AS bit)
+    ORDER BY [b].[PublishedAt] DESC
+    OFFSET @__p_0 ROWS FETCH NEXT @__p_1 ROWS ONLY
+) AS [b0]
+INNER JOIN [Users] AS [u] ON [b0].[AuthorId] = [u].[Id]
+LEFT JOIN [BlogCategories] AS [b1] ON [b0].[CategoryId] = [b1].[Id]
+ORDER BY [b0].[PublishedAt] DESC
+2026-04-28 01:30:35.778 [INF] HTTP GET /api/blog responded 200 in 6.9085 ms
+2026-04-28 01:30:36.889 [INF] Executed DbCommand (4ms) [Parameters=[@p0='?' (DbType = DateTime2), @p1='?' (Size = 30), @p2='?' (Size = 100), @p3='?' (DbType = DateTime2), @p4='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SET IMPLICIT_TRANSACTIONS OFF;
+SET NOCOUNT ON;
+INSERT INTO [ChatSessions] ([CreatedAt], [SessionType], [Title], [UpdatedAt], [UserId])
+OUTPUT INSERTED.[Id]
+VALUES (@p0, @p1, @p2, @p3, @p4);
+2026-04-28 01:30:36.890 [INF] HTTP POST /api/chatbot/sessions responded 201 in 6.0024 ms
+2026-04-28 01:30:38.662 [INF] Executed DbCommand (3ms) [Parameters=[@__sessionId_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [c].[Id], [c].[CreatedAt], [c].[SessionType], [c].[Title], [c].[UpdatedAt], [c].[UserId]
+FROM [ChatSessions] AS [c]
+WHERE [c].[Id] = @__sessionId_0
+2026-04-28 01:30:38.669 [INF] Executed DbCommand (4ms) [Parameters=[@p0='?' (Size = 4000), @p1='?' (DbType = DateTime2), @p2='?' (Size = 50), @p3='?' (Size = 20), @p4='?' (DbType = Int32), @p5='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SET IMPLICIT_TRANSACTIONS OFF;
+SET NOCOUNT ON;
+INSERT INTO [ChatMessages] ([Content], [CreatedAt], [Model], [Role], [SessionId], [TokensUsed])
+OUTPUT INSERTED.[Id]
+VALUES (@p0, @p1, @p2, @p3, @p4, @p5);
+2026-04-28 01:30:39.247 [INF] Executed DbCommand (2ms) [Parameters=[@p0='?' (Size = 4000), @p1='?' (DbType = DateTime2), @p2='?' (Size = 50), @p3='?' (Size = 20), @p4='?' (DbType = Int32), @p5='?' (DbType = Int32), @p7='?' (DbType = Int32), @p6='?' (DbType = DateTime2)], CommandType='"Text"', CommandTimeout='30']
+SET NOCOUNT ON;
+INSERT INTO [ChatMessages] ([Content], [CreatedAt], [Model], [Role], [SessionId], [TokensUsed])
+OUTPUT INSERTED.[Id]
+VALUES (@p0, @p1, @p2, @p3, @p4, @p5);
+UPDATE [ChatSessions] SET [UpdatedAt] = @p6
+OUTPUT 1
+WHERE [Id] = @p7;
+2026-04-28 01:30:39.250 [INF] HTTP POST /api/chatbot/sessions/1010/messages/stream responded 200 in 592.6743 ms
+2026-04-28 01:36:28.530 [INF] Executed DbCommand (1ms) [Parameters=[@__p_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [u].[Id], [u].[CreatedAt], [u].[DateOfBirth], [u].[Email], [u].[FirstName], [u].[IsActive], [u].[IsEmailVerified], [u].[LastName], [u].[PasswordHash], [u].[PhoneNumber], [u].[Role], [u].[UpdatedAt]
+FROM [Users] AS [u]
+WHERE [u].[Id] = @__p_0
+2026-04-28 01:36:28.531 [INF] HTTP GET /api/auth/me responded 200 in 26.6885 ms
+2026-04-28 01:36:28.638 [INF] Executed DbCommand (2ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [BlogPosts] AS [b]
+WHERE [b].[IsPublished] = CAST(1 AS bit)
+2026-04-28 01:36:28.641 [INF] Executed DbCommand (2ms) [Parameters=[@__p_0='?' (DbType = Int32), @__p_1='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT [b0].[Id], [b0].[Title], [b0].[Slug], [b0].[Summary], [b0].[ThumbnailUrl], [b0].[Tags], [b0].[ViewCount], [u].[FirstName] + N' ' + [u].[LastName], [b1].[Name], [b0].[PublishedAt]
+FROM (
+    SELECT [b].[Id], [b].[AuthorId], [b].[CategoryId], [b].[PublishedAt], [b].[Slug], [b].[Summary], [b].[Tags], [b].[ThumbnailUrl], [b].[Title], [b].[ViewCount]
+    FROM [BlogPosts] AS [b]
+    WHERE [b].[IsPublished] = CAST(1 AS bit)
+    ORDER BY [b].[PublishedAt] DESC
+    OFFSET @__p_0 ROWS FETCH NEXT @__p_1 ROWS ONLY
+) AS [b0]
+INNER JOIN [Users] AS [u] ON [b0].[AuthorId] = [u].[Id]
+LEFT JOIN [BlogCategories] AS [b1] ON [b0].[CategoryId] = [b1].[Id]
+ORDER BY [b0].[PublishedAt] DESC
+2026-04-28 01:36:28.641 [INF] HTTP GET /api/blog responded 200 in 6.1792 ms
+2026-04-28 01:36:28.656 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT [b].[Id], [b].[Name], [b].[Slug], [b].[Description], (
+    SELECT COUNT(*)
+    FROM [BlogPosts] AS [b0]
+    WHERE [b].[Id] = [b0].[CategoryId] AND [b0].[IsPublished] = CAST(1 AS bit)) AS [PostCount]
+FROM [BlogCategories] AS [b]
+2026-04-28 01:36:28.656 [INF] HTTP GET /api/blog/categories responded 200 in 21.0463 ms
+2026-04-28 01:38:52.497 [INF] Executed DbCommand (2ms) [Parameters=[@__p_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [u].[Id], [u].[CreatedAt], [u].[DateOfBirth], [u].[Email], [u].[FirstName], [u].[IsActive], [u].[IsEmailVerified], [u].[LastName], [u].[PasswordHash], [u].[PhoneNumber], [u].[Role], [u].[UpdatedAt]
+FROM [Users] AS [u]
+WHERE [u].[Id] = @__p_0
+2026-04-28 01:38:52.498 [INF] HTTP GET /api/auth/me responded 200 in 4.8650 ms
+2026-04-28 01:38:52.546 [INF] Executed DbCommand (2ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT [b].[Id], [b].[Name], [b].[Slug], [b].[Description], (
+    SELECT COUNT(*)
+    FROM [BlogPosts] AS [b0]
+    WHERE [b].[Id] = [b0].[CategoryId] AND [b0].[IsPublished] = CAST(1 AS bit)) AS [PostCount]
+FROM [BlogCategories] AS [b]
+2026-04-28 01:38:52.546 [INF] Executed DbCommand (2ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [BlogPosts] AS [b]
+WHERE [b].[IsPublished] = CAST(1 AS bit)
+2026-04-28 01:38:52.547 [INF] HTTP GET /api/blog/categories responded 200 in 3.1751 ms
+2026-04-28 01:38:52.551 [INF] Executed DbCommand (3ms) [Parameters=[@__p_0='?' (DbType = Int32), @__p_1='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT [b0].[Id], [b0].[Title], [b0].[Slug], [b0].[Summary], [b0].[ThumbnailUrl], [b0].[Tags], [b0].[ViewCount], [u].[FirstName] + N' ' + [u].[LastName], [b1].[Name], [b0].[PublishedAt]
+FROM (
+    SELECT [b].[Id], [b].[AuthorId], [b].[CategoryId], [b].[PublishedAt], [b].[Slug], [b].[Summary], [b].[Tags], [b].[ThumbnailUrl], [b].[Title], [b].[ViewCount]
+    FROM [BlogPosts] AS [b]
+    WHERE [b].[IsPublished] = CAST(1 AS bit)
+    ORDER BY [b].[PublishedAt] DESC
+    OFFSET @__p_0 ROWS FETCH NEXT @__p_1 ROWS ONLY
+) AS [b0]
+INNER JOIN [Users] AS [u] ON [b0].[AuthorId] = [u].[Id]
+LEFT JOIN [BlogCategories] AS [b1] ON [b0].[CategoryId] = [b1].[Id]
+ORDER BY [b0].[PublishedAt] DESC
+2026-04-28 01:38:52.551 [INF] HTTP GET /api/blog responded 200 in 7.6281 ms
+2026-04-28 01:38:53.933 [INF] Executed DbCommand (8ms) [Parameters=[@p0='?' (DbType = DateTime2), @p1='?' (Size = 30), @p2='?' (Size = 100), @p3='?' (DbType = DateTime2), @p4='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SET IMPLICIT_TRANSACTIONS OFF;
+SET NOCOUNT ON;
+INSERT INTO [ChatSessions] ([CreatedAt], [SessionType], [Title], [UpdatedAt], [UserId])
+OUTPUT INSERTED.[Id]
+VALUES (@p0, @p1, @p2, @p3, @p4);
+2026-04-28 01:38:53.934 [INF] HTTP POST /api/chatbot/sessions responded 201 in 10.6615 ms
+2026-04-28 01:38:56.337 [INF] Executed DbCommand (3ms) [Parameters=[@__sessionId_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [c].[Id], [c].[CreatedAt], [c].[SessionType], [c].[Title], [c].[UpdatedAt], [c].[UserId]
+FROM [ChatSessions] AS [c]
+WHERE [c].[Id] = @__sessionId_0
+2026-04-28 01:38:56.343 [INF] Executed DbCommand (6ms) [Parameters=[@p0='?' (Size = 4000), @p1='?' (DbType = DateTime2), @p2='?' (Size = 50), @p3='?' (Size = 20), @p4='?' (DbType = Int32), @p5='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SET IMPLICIT_TRANSACTIONS OFF;
+SET NOCOUNT ON;
+INSERT INTO [ChatMessages] ([Content], [CreatedAt], [Model], [Role], [SessionId], [TokensUsed])
+OUTPUT INSERTED.[Id]
+VALUES (@p0, @p1, @p2, @p3, @p4, @p5);
+2026-04-28 01:38:57.048 [INF] Executed DbCommand (2ms) [Parameters=[@p0='?' (Size = 4000), @p1='?' (DbType = DateTime2), @p2='?' (Size = 50), @p3='?' (Size = 20), @p4='?' (DbType = Int32), @p5='?' (DbType = Int32), @p7='?' (DbType = Int32), @p6='?' (DbType = DateTime2)], CommandType='"Text"', CommandTimeout='30']
+SET NOCOUNT ON;
+INSERT INTO [ChatMessages] ([Content], [CreatedAt], [Model], [Role], [SessionId], [TokensUsed])
+OUTPUT INSERTED.[Id]
+VALUES (@p0, @p1, @p2, @p3, @p4, @p5);
+UPDATE [ChatSessions] SET [UpdatedAt] = @p6
+OUTPUT 1
+WHERE [Id] = @p7;
+2026-04-28 01:38:57.050 [INF] HTTP POST /api/chatbot/sessions/1011/messages/stream responded 200 in 717.5027 ms
+2026-04-28 01:41:06.613 [INF] Executed DbCommand (2ms) [Parameters=[@__p_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [u].[Id], [u].[CreatedAt], [u].[DateOfBirth], [u].[Email], [u].[FirstName], [u].[IsActive], [u].[IsEmailVerified], [u].[LastName], [u].[PasswordHash], [u].[PhoneNumber], [u].[Role], [u].[UpdatedAt]
+FROM [Users] AS [u]
+WHERE [u].[Id] = @__p_0
+2026-04-28 01:41:06.613 [INF] HTTP GET /api/auth/me responded 200 in 3.7952 ms
+2026-04-28 01:41:06.688 [INF] Executed DbCommand (2ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT [b].[Id], [b].[Name], [b].[Slug], [b].[Description], (
+    SELECT COUNT(*)
+    FROM [BlogPosts] AS [b0]
+    WHERE [b].[Id] = [b0].[CategoryId] AND [b0].[IsPublished] = CAST(1 AS bit)) AS [PostCount]
+FROM [BlogCategories] AS [b]
+2026-04-28 01:41:06.688 [INF] Executed DbCommand (2ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [BlogPosts] AS [b]
+WHERE [b].[IsPublished] = CAST(1 AS bit)
+2026-04-28 01:41:06.688 [INF] HTTP GET /api/blog/categories responded 200 in 3.3183 ms
+2026-04-28 01:41:06.690 [INF] Executed DbCommand (2ms) [Parameters=[@__p_0='?' (DbType = Int32), @__p_1='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT [b0].[Id], [b0].[Title], [b0].[Slug], [b0].[Summary], [b0].[ThumbnailUrl], [b0].[Tags], [b0].[ViewCount], [u].[FirstName] + N' ' + [u].[LastName], [b1].[Name], [b0].[PublishedAt]
+FROM (
+    SELECT [b].[Id], [b].[AuthorId], [b].[CategoryId], [b].[PublishedAt], [b].[Slug], [b].[Summary], [b].[Tags], [b].[ThumbnailUrl], [b].[Title], [b].[ViewCount]
+    FROM [BlogPosts] AS [b]
+    WHERE [b].[IsPublished] = CAST(1 AS bit)
+    ORDER BY [b].[PublishedAt] DESC
+    OFFSET @__p_0 ROWS FETCH NEXT @__p_1 ROWS ONLY
+) AS [b0]
+INNER JOIN [Users] AS [u] ON [b0].[AuthorId] = [u].[Id]
+LEFT JOIN [BlogCategories] AS [b1] ON [b0].[CategoryId] = [b1].[Id]
+ORDER BY [b0].[PublishedAt] DESC
+2026-04-28 01:41:06.691 [INF] HTTP GET /api/blog responded 200 in 5.9788 ms
+2026-04-28 01:41:07.982 [INF] Executed DbCommand (5ms) [Parameters=[@p0='?' (DbType = DateTime2), @p1='?' (Size = 30), @p2='?' (Size = 100), @p3='?' (DbType = DateTime2), @p4='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SET IMPLICIT_TRANSACTIONS OFF;
+SET NOCOUNT ON;
+INSERT INTO [ChatSessions] ([CreatedAt], [SessionType], [Title], [UpdatedAt], [UserId])
+OUTPUT INSERTED.[Id]
+VALUES (@p0, @p1, @p2, @p3, @p4);
+2026-04-28 01:41:07.983 [INF] HTTP POST /api/chatbot/sessions responded 201 in 8.1547 ms
+2026-04-28 01:41:09.537 [INF] Executed DbCommand (2ms) [Parameters=[@__sessionId_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [c].[Id], [c].[CreatedAt], [c].[SessionType], [c].[Title], [c].[UpdatedAt], [c].[UserId]
+FROM [ChatSessions] AS [c]
+WHERE [c].[Id] = @__sessionId_0
+2026-04-28 01:41:09.545 [INF] Executed DbCommand (8ms) [Parameters=[@p0='?' (Size = 4000), @p1='?' (DbType = DateTime2), @p2='?' (Size = 50), @p3='?' (Size = 20), @p4='?' (DbType = Int32), @p5='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SET IMPLICIT_TRANSACTIONS OFF;
+SET NOCOUNT ON;
+INSERT INTO [ChatMessages] ([Content], [CreatedAt], [Model], [Role], [SessionId], [TokensUsed])
+OUTPUT INSERTED.[Id]
+VALUES (@p0, @p1, @p2, @p3, @p4, @p5);
+2026-04-28 01:41:10.136 [INF] Executed DbCommand (2ms) [Parameters=[@p0='?' (Size = 4000), @p1='?' (DbType = DateTime2), @p2='?' (Size = 50), @p3='?' (Size = 20), @p4='?' (DbType = Int32), @p5='?' (DbType = Int32), @p7='?' (DbType = Int32), @p6='?' (DbType = DateTime2)], CommandType='"Text"', CommandTimeout='30']
+SET NOCOUNT ON;
+INSERT INTO [ChatMessages] ([Content], [CreatedAt], [Model], [Role], [SessionId], [TokensUsed])
+OUTPUT INSERTED.[Id]
+VALUES (@p0, @p1, @p2, @p3, @p4, @p5);
+UPDATE [ChatSessions] SET [UpdatedAt] = @p6
+OUTPUT 1
+WHERE [Id] = @p7;
+2026-04-28 01:41:10.139 [INF] HTTP POST /api/chatbot/sessions/1012/messages/stream responded 200 in 605.6055 ms
+2026-04-28 02:07:40.762 [INF] HTTP GET /api/auth/me responded 401 in 26.8307 ms
+2026-04-28 02:07:40.856 [INF] Executed DbCommand (21ms) [Parameters=[@__hashed_0='?' (Size = 256)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [r].[Id], [r].[CreatedAt], [r].[ExpiresAt], [r].[IsRevoked], [r].[Token], [r].[UserId], [u].[Id], [u].[CreatedAt], [u].[DateOfBirth], [u].[Email], [u].[FirstName], [u].[IsActive], [u].[IsEmailVerified], [u].[LastName], [u].[PasswordHash], [u].[PhoneNumber], [u].[Role], [u].[UpdatedAt]
+FROM [RefreshTokens] AS [r]
+INNER JOIN [Users] AS [u] ON [r].[UserId] = [u].[Id]
+WHERE [r].[Token] = @__hashed_0
+2026-04-28 02:07:40.869 [INF] Executed DbCommand (8ms) [Parameters=[@p1='?' (DbType = Int32), @p0='?' (DbType = Boolean), @p2='?' (DbType = DateTime2), @p3='?' (DbType = DateTime2), @p4='?' (DbType = Boolean), @p5='?' (Size = 256), @p6='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SET NOCOUNT ON;
+UPDATE [RefreshTokens] SET [IsRevoked] = @p0
+OUTPUT 1
+WHERE [Id] = @p1;
+INSERT INTO [RefreshTokens] ([CreatedAt], [ExpiresAt], [IsRevoked], [Token], [UserId])
+OUTPUT INSERTED.[Id]
+VALUES (@p2, @p3, @p4, @p5, @p6);
+2026-04-28 02:07:40.871 [INF] HTTP POST /api/auth/refresh responded 200 in 92.6113 ms
+2026-04-28 02:07:40.875 [INF] Executed DbCommand (1ms) [Parameters=[@__p_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [u].[Id], [u].[CreatedAt], [u].[DateOfBirth], [u].[Email], [u].[FirstName], [u].[IsActive], [u].[IsEmailVerified], [u].[LastName], [u].[PasswordHash], [u].[PhoneNumber], [u].[Role], [u].[UpdatedAt]
+FROM [Users] AS [u]
+WHERE [u].[Id] = @__p_0
+2026-04-28 02:07:40.875 [INF] HTTP GET /api/auth/me responded 200 in 1.7885 ms
+2026-04-28 02:07:40.890 [INF] Executed DbCommand (4ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT [b].[Id], [b].[Name], [b].[Slug], [b].[Description], (
+    SELECT COUNT(*)
+    FROM [BlogPosts] AS [b0]
+    WHERE [b].[Id] = [b0].[CategoryId] AND [b0].[IsPublished] = CAST(1 AS bit)) AS [PostCount]
+FROM [BlogCategories] AS [b]
+2026-04-28 02:07:40.890 [INF] HTTP GET /api/blog/categories responded 200 in 5.2735 ms
+2026-04-28 02:07:40.904 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [BlogPosts] AS [b]
+WHERE [b].[IsPublished] = CAST(1 AS bit)
+2026-04-28 02:07:40.906 [INF] Executed DbCommand (1ms) [Parameters=[@__p_0='?' (DbType = Int32), @__p_1='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT [b0].[Id], [b0].[Title], [b0].[Slug], [b0].[Summary], [b0].[ThumbnailUrl], [b0].[Tags], [b0].[ViewCount], [u].[FirstName] + N' ' + [u].[LastName], [b1].[Name], [b0].[PublishedAt]
+FROM (
+    SELECT [b].[Id], [b].[AuthorId], [b].[CategoryId], [b].[PublishedAt], [b].[Slug], [b].[Summary], [b].[Tags], [b].[ThumbnailUrl], [b].[Title], [b].[ViewCount]
+    FROM [BlogPosts] AS [b]
+    WHERE [b].[IsPublished] = CAST(1 AS bit)
+    ORDER BY [b].[PublishedAt] DESC
+    OFFSET @__p_0 ROWS FETCH NEXT @__p_1 ROWS ONLY
+) AS [b0]
+INNER JOIN [Users] AS [u] ON [b0].[AuthorId] = [u].[Id]
+LEFT JOIN [BlogCategories] AS [b1] ON [b0].[CategoryId] = [b1].[Id]
+ORDER BY [b0].[PublishedAt] DESC
+2026-04-28 02:07:40.906 [INF] HTTP GET /api/blog responded 200 in 20.8401 ms
+2026-04-28 02:07:42.071 [INF] Executed DbCommand (5ms) [Parameters=[@p0='?' (DbType = DateTime2), @p1='?' (Size = 30), @p2='?' (Size = 100), @p3='?' (DbType = DateTime2), @p4='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SET IMPLICIT_TRANSACTIONS OFF;
+SET NOCOUNT ON;
+INSERT INTO [ChatSessions] ([CreatedAt], [SessionType], [Title], [UpdatedAt], [UserId])
+OUTPUT INSERTED.[Id]
+VALUES (@p0, @p1, @p2, @p3, @p4);
+2026-04-28 02:07:42.073 [INF] HTTP POST /api/chatbot/sessions responded 201 in 10.8787 ms
+2026-04-28 02:07:43.762 [INF] Executed DbCommand (3ms) [Parameters=[@__sessionId_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [c].[Id], [c].[CreatedAt], [c].[SessionType], [c].[Title], [c].[UpdatedAt], [c].[UserId]
+FROM [ChatSessions] AS [c]
+WHERE [c].[Id] = @__sessionId_0
+2026-04-28 02:07:43.768 [INF] Executed DbCommand (5ms) [Parameters=[@p0='?' (Size = 4000), @p1='?' (DbType = DateTime2), @p2='?' (Size = 50), @p3='?' (Size = 20), @p4='?' (DbType = Int32), @p5='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SET IMPLICIT_TRANSACTIONS OFF;
+SET NOCOUNT ON;
+INSERT INTO [ChatMessages] ([Content], [CreatedAt], [Model], [Role], [SessionId], [TokensUsed])
+OUTPUT INSERTED.[Id]
+VALUES (@p0, @p1, @p2, @p3, @p4, @p5);
+2026-04-28 02:07:53.315 [INF] Executed DbCommand (3ms) [Parameters=[@p0='?' (Size = 4000), @p1='?' (DbType = DateTime2), @p2='?' (Size = 50), @p3='?' (Size = 20), @p4='?' (DbType = Int32), @p5='?' (DbType = Int32), @p7='?' (DbType = Int32), @p6='?' (DbType = DateTime2)], CommandType='"Text"', CommandTimeout='30']
+SET NOCOUNT ON;
+INSERT INTO [ChatMessages] ([Content], [CreatedAt], [Model], [Role], [SessionId], [TokensUsed])
+OUTPUT INSERTED.[Id]
+VALUES (@p0, @p1, @p2, @p3, @p4, @p5);
+UPDATE [ChatSessions] SET [UpdatedAt] = @p6
+OUTPUT 1
+WHERE [Id] = @p7;
+2026-04-28 02:07:53.317 [INF] HTTP POST /api/chatbot/sessions/1013/messages/stream responded 200 in 9559.2529 ms
+2026-04-28 02:08:16.040 [INF] Executed DbCommand (3ms) [Parameters=[@__sessionId_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [c].[Id], [c].[CreatedAt], [c].[SessionType], [c].[Title], [c].[UpdatedAt], [c].[UserId]
+FROM [ChatSessions] AS [c]
+WHERE [c].[Id] = @__sessionId_0
+2026-04-28 02:08:16.049 [INF] Executed DbCommand (7ms) [Parameters=[@p0='?' (Size = 4000), @p1='?' (DbType = DateTime2), @p2='?' (Size = 50), @p3='?' (Size = 20), @p4='?' (DbType = Int32), @p5='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SET IMPLICIT_TRANSACTIONS OFF;
+SET NOCOUNT ON;
+INSERT INTO [ChatMessages] ([Content], [CreatedAt], [Model], [Role], [SessionId], [TokensUsed])
+OUTPUT INSERTED.[Id]
+VALUES (@p0, @p1, @p2, @p3, @p4, @p5);
+2026-04-28 02:08:20.572 [INF] Executed DbCommand (10ms) [Parameters=[@p0='?' (Size = 4000), @p1='?' (DbType = DateTime2), @p2='?' (Size = 50), @p3='?' (Size = 20), @p4='?' (DbType = Int32), @p5='?' (DbType = Int32), @p7='?' (DbType = Int32), @p6='?' (DbType = DateTime2)], CommandType='"Text"', CommandTimeout='30']
+SET NOCOUNT ON;
+INSERT INTO [ChatMessages] ([Content], [CreatedAt], [Model], [Role], [SessionId], [TokensUsed])
+OUTPUT INSERTED.[Id]
+VALUES (@p0, @p1, @p2, @p3, @p4, @p5);
+UPDATE [ChatSessions] SET [UpdatedAt] = @p6
+OUTPUT 1
+WHERE [Id] = @p7;
+2026-04-28 02:08:20.574 [INF] HTTP POST /api/chatbot/sessions/1013/messages/stream responded 200 in 4541.6187 ms
+2026-04-28 02:08:37.614 [INF] Executed DbCommand (3ms) [Parameters=[@__sessionId_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [c].[Id], [c].[CreatedAt], [c].[SessionType], [c].[Title], [c].[UpdatedAt], [c].[UserId]
+FROM [ChatSessions] AS [c]
+WHERE [c].[Id] = @__sessionId_0
+2026-04-28 02:08:37.619 [INF] Executed DbCommand (4ms) [Parameters=[@p0='?' (Size = 4000), @p1='?' (DbType = DateTime2), @p2='?' (Size = 50), @p3='?' (Size = 20), @p4='?' (DbType = Int32), @p5='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SET IMPLICIT_TRANSACTIONS OFF;
+SET NOCOUNT ON;
+INSERT INTO [ChatMessages] ([Content], [CreatedAt], [Model], [Role], [SessionId], [TokensUsed])
+OUTPUT INSERTED.[Id]
+VALUES (@p0, @p1, @p2, @p3, @p4, @p5);
+2026-04-28 02:08:41.770 [INF] HTTP PATCH /api/actions/book_appointment responded 404 in 1.9554 ms
+2026-04-28 02:08:45.630 [INF] Executed DbCommand (1ms) [Parameters=[@p0='?' (Size = 4000), @p1='?' (DbType = DateTime2), @p2='?' (Size = 50), @p3='?' (Size = 20), @p4='?' (DbType = Int32), @p5='?' (DbType = Int32), @p7='?' (DbType = Int32), @p6='?' (DbType = DateTime2)], CommandType='"Text"', CommandTimeout='30']
+SET NOCOUNT ON;
+INSERT INTO [ChatMessages] ([Content], [CreatedAt], [Model], [Role], [SessionId], [TokensUsed])
+OUTPUT INSERTED.[Id]
+VALUES (@p0, @p1, @p2, @p3, @p4, @p5);
+UPDATE [ChatSessions] SET [UpdatedAt] = @p6
+OUTPUT 1
+WHERE [Id] = @p7;
+2026-04-28 02:08:45.632 [INF] HTTP POST /api/chatbot/sessions/1013/messages/stream responded 200 in 8024.7904 ms
+2026-04-28 02:09:19.470 [INF] Executed DbCommand (2ms) [Parameters=[@__sessionId_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [c].[Id], [c].[CreatedAt], [c].[SessionType], [c].[Title], [c].[UpdatedAt], [c].[UserId]
+FROM [ChatSessions] AS [c]
+WHERE [c].[Id] = @__sessionId_0
+2026-04-28 02:09:19.480 [INF] Executed DbCommand (6ms) [Parameters=[@p0='?' (Size = 4000), @p1='?' (DbType = DateTime2), @p2='?' (Size = 50), @p3='?' (Size = 20), @p4='?' (DbType = Int32), @p5='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SET IMPLICIT_TRANSACTIONS OFF;
+SET NOCOUNT ON;
+INSERT INTO [ChatMessages] ([Content], [CreatedAt], [Model], [Role], [SessionId], [TokensUsed])
+OUTPUT INSERTED.[Id]
+VALUES (@p0, @p1, @p2, @p3, @p4, @p5);
+2026-04-28 02:09:38.636 [INF] Executed DbCommand (2ms) [Parameters=[@p0='?' (Size = 4000), @p1='?' (DbType = DateTime2), @p2='?' (Size = 50), @p3='?' (Size = 20), @p4='?' (DbType = Int32), @p5='?' (DbType = Int32), @p7='?' (DbType = Int32), @p6='?' (DbType = DateTime2)], CommandType='"Text"', CommandTimeout='30']
+SET NOCOUNT ON;
+INSERT INTO [ChatMessages] ([Content], [CreatedAt], [Model], [Role], [SessionId], [TokensUsed])
+OUTPUT INSERTED.[Id]
+VALUES (@p0, @p1, @p2, @p3, @p4, @p5);
+UPDATE [ChatSessions] SET [UpdatedAt] = @p6
+OUTPUT 1
+WHERE [Id] = @p7;
+2026-04-28 02:09:38.639 [INF] HTTP POST /api/chatbot/sessions/1013/messages/stream responded 200 in 19172.2953 ms
+2026-04-28 02:13:20.934 [INF] Executed DbCommand (1ms) [Parameters=[@__p_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [u].[Id], [u].[CreatedAt], [u].[DateOfBirth], [u].[Email], [u].[FirstName], [u].[IsActive], [u].[IsEmailVerified], [u].[LastName], [u].[PasswordHash], [u].[PhoneNumber], [u].[Role], [u].[UpdatedAt]
+FROM [Users] AS [u]
+WHERE [u].[Id] = @__p_0
+2026-04-28 02:13:20.935 [INF] HTTP GET /api/auth/me responded 200 in 24.7869 ms
+2026-04-28 02:13:20.974 [INF] Executed DbCommand (2ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT [b].[Id], [b].[Name], [b].[Slug], [b].[Description], (
+    SELECT COUNT(*)
+    FROM [BlogPosts] AS [b0]
+    WHERE [b].[Id] = [b0].[CategoryId] AND [b0].[IsPublished] = CAST(1 AS bit)) AS [PostCount]
+FROM [BlogCategories] AS [b]
+2026-04-28 02:13:20.974 [INF] HTTP GET /api/blog/categories responded 200 in 3.3565 ms
+2026-04-28 02:13:20.990 [INF] Executed DbCommand (2ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [BlogPosts] AS [b]
+WHERE [b].[IsPublished] = CAST(1 AS bit)
+2026-04-28 02:13:20.992 [INF] Executed DbCommand (2ms) [Parameters=[@__p_0='?' (DbType = Int32), @__p_1='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT [b0].[Id], [b0].[Title], [b0].[Slug], [b0].[Summary], [b0].[ThumbnailUrl], [b0].[Tags], [b0].[ViewCount], [u].[FirstName] + N' ' + [u].[LastName], [b1].[Name], [b0].[PublishedAt]
+FROM (
+    SELECT [b].[Id], [b].[AuthorId], [b].[CategoryId], [b].[PublishedAt], [b].[Slug], [b].[Summary], [b].[Tags], [b].[ThumbnailUrl], [b].[Title], [b].[ViewCount]
+    FROM [BlogPosts] AS [b]
+    WHERE [b].[IsPublished] = CAST(1 AS bit)
+    ORDER BY [b].[PublishedAt] DESC
+    OFFSET @__p_0 ROWS FETCH NEXT @__p_1 ROWS ONLY
+) AS [b0]
+INNER JOIN [Users] AS [u] ON [b0].[AuthorId] = [u].[Id]
+LEFT JOIN [BlogCategories] AS [b1] ON [b0].[CategoryId] = [b1].[Id]
+ORDER BY [b0].[PublishedAt] DESC
+2026-04-28 02:13:20.993 [INF] HTTP GET /api/blog responded 200 in 21.9106 ms
+2026-04-28 02:13:22.208 [INF] Executed DbCommand (5ms) [Parameters=[@p0='?' (DbType = DateTime2), @p1='?' (Size = 30), @p2='?' (Size = 100), @p3='?' (DbType = DateTime2), @p4='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SET IMPLICIT_TRANSACTIONS OFF;
+SET NOCOUNT ON;
+INSERT INTO [ChatSessions] ([CreatedAt], [SessionType], [Title], [UpdatedAt], [UserId])
+OUTPUT INSERTED.[Id]
+VALUES (@p0, @p1, @p2, @p3, @p4);
+2026-04-28 02:13:22.210 [INF] HTTP POST /api/chatbot/sessions responded 201 in 10.1028 ms
+2026-04-28 02:13:24.189 [INF] Executed DbCommand (2ms) [Parameters=[@__sessionId_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [c].[Id], [c].[CreatedAt], [c].[SessionType], [c].[Title], [c].[UpdatedAt], [c].[UserId]
+FROM [ChatSessions] AS [c]
+WHERE [c].[Id] = @__sessionId_0
+2026-04-28 02:13:24.193 [INF] Executed DbCommand (4ms) [Parameters=[@p0='?' (Size = 4000), @p1='?' (DbType = DateTime2), @p2='?' (Size = 50), @p3='?' (Size = 20), @p4='?' (DbType = Int32), @p5='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SET IMPLICIT_TRANSACTIONS OFF;
+SET NOCOUNT ON;
+INSERT INTO [ChatMessages] ([Content], [CreatedAt], [Model], [Role], [SessionId], [TokensUsed])
+OUTPUT INSERTED.[Id]
+VALUES (@p0, @p1, @p2, @p3, @p4, @p5);
+2026-04-28 02:13:28.094 [INF] Executed DbCommand (1ms) [Parameters=[@p0='?' (Size = 4000), @p1='?' (DbType = DateTime2), @p2='?' (Size = 50), @p3='?' (Size = 20), @p4='?' (DbType = Int32), @p5='?' (DbType = Int32), @p7='?' (DbType = Int32), @p6='?' (DbType = DateTime2)], CommandType='"Text"', CommandTimeout='30']
+SET NOCOUNT ON;
+INSERT INTO [ChatMessages] ([Content], [CreatedAt], [Model], [Role], [SessionId], [TokensUsed])
+OUTPUT INSERTED.[Id]
+VALUES (@p0, @p1, @p2, @p3, @p4, @p5);
+UPDATE [ChatSessions] SET [UpdatedAt] = @p6
+OUTPUT 1
+WHERE [Id] = @p7;
+2026-04-28 02:13:28.096 [INF] HTTP POST /api/chatbot/sessions/1014/messages/stream responded 200 in 3910.5976 ms
+2026-04-28 02:13:42.971 [INF] Executed DbCommand (2ms) [Parameters=[@__sessionId_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [c].[Id], [c].[CreatedAt], [c].[SessionType], [c].[Title], [c].[UpdatedAt], [c].[UserId]
+FROM [ChatSessions] AS [c]
+WHERE [c].[Id] = @__sessionId_0
+2026-04-28 02:13:42.977 [INF] Executed DbCommand (6ms) [Parameters=[@p0='?' (Size = 4000), @p1='?' (DbType = DateTime2), @p2='?' (Size = 50), @p3='?' (Size = 20), @p4='?' (DbType = Int32), @p5='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SET IMPLICIT_TRANSACTIONS OFF;
+SET NOCOUNT ON;
+INSERT INTO [ChatMessages] ([Content], [CreatedAt], [Model], [Role], [SessionId], [TokensUsed])
+OUTPUT INSERTED.[Id]
+VALUES (@p0, @p1, @p2, @p3, @p4, @p5);
+2026-04-28 02:13:51.851 [INF] Executed DbCommand (1ms) [Parameters=[@p0='?' (Size = 4000), @p1='?' (DbType = DateTime2), @p2='?' (Size = 50), @p3='?' (Size = 20), @p4='?' (DbType = Int32), @p5='?' (DbType = Int32), @p7='?' (DbType = Int32), @p6='?' (DbType = DateTime2)], CommandType='"Text"', CommandTimeout='30']
+SET NOCOUNT ON;
+INSERT INTO [ChatMessages] ([Content], [CreatedAt], [Model], [Role], [SessionId], [TokensUsed])
+OUTPUT INSERTED.[Id]
+VALUES (@p0, @p1, @p2, @p3, @p4, @p5);
+UPDATE [ChatSessions] SET [UpdatedAt] = @p6
+OUTPUT 1
+WHERE [Id] = @p7;
+2026-04-28 02:13:51.853 [INF] HTTP POST /api/chatbot/sessions/1014/messages/stream responded 200 in 8886.3813 ms
+2026-04-28 02:14:15.880 [INF] Executed DbCommand (253ms) [Parameters=[@__p_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [u].[Id], [u].[CreatedAt], [u].[DateOfBirth], [u].[Email], [u].[FirstName], [u].[IsActive], [u].[IsEmailVerified], [u].[LastName], [u].[PasswordHash], [u].[PhoneNumber], [u].[Role], [u].[UpdatedAt]
+FROM [Users] AS [u]
+WHERE [u].[Id] = @__p_0
+2026-04-28 02:14:15.880 [INF] HTTP GET /api/auth/me responded 200 in 254.5640 ms
+2026-04-28 02:14:16.109 [INF] Executed DbCommand (7ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT [b].[Id], [b].[Name], [b].[Slug], [b].[Description], (
+    SELECT COUNT(*)
+    FROM [BlogPosts] AS [b0]
+    WHERE [b].[Id] = [b0].[CategoryId] AND [b0].[IsPublished] = CAST(1 AS bit)) AS [PostCount]
+FROM [BlogCategories] AS [b]
+2026-04-28 02:14:16.109 [INF] HTTP GET /api/blog/categories responded 200 in 7.8139 ms
+2026-04-28 02:14:16.109 [INF] Executed DbCommand (8ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [BlogPosts] AS [b]
+WHERE [b].[IsPublished] = CAST(1 AS bit)
+2026-04-28 02:14:16.112 [INF] Executed DbCommand (2ms) [Parameters=[@__p_0='?' (DbType = Int32), @__p_1='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT [b0].[Id], [b0].[Title], [b0].[Slug], [b0].[Summary], [b0].[ThumbnailUrl], [b0].[Tags], [b0].[ViewCount], [u].[FirstName] + N' ' + [u].[LastName], [b1].[Name], [b0].[PublishedAt]
+FROM (
+    SELECT [b].[Id], [b].[AuthorId], [b].[CategoryId], [b].[PublishedAt], [b].[Slug], [b].[Summary], [b].[Tags], [b].[ThumbnailUrl], [b].[Title], [b].[ViewCount]
+    FROM [BlogPosts] AS [b]
+    WHERE [b].[IsPublished] = CAST(1 AS bit)
+    ORDER BY [b].[PublishedAt] DESC
+    OFFSET @__p_0 ROWS FETCH NEXT @__p_1 ROWS ONLY
+) AS [b0]
+INNER JOIN [Users] AS [u] ON [b0].[AuthorId] = [u].[Id]
+LEFT JOIN [BlogCategories] AS [b1] ON [b0].[CategoryId] = [b1].[Id]
+ORDER BY [b0].[PublishedAt] DESC
+2026-04-28 02:14:16.113 [INF] HTTP GET /api/blog responded 200 in 13.9734 ms
+2026-04-28 02:36:09.465 [INF] Application is shutting down...

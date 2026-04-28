@@ -10,7 +10,7 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from src.agents.core.a2a.schemas import TaskOutput
-from src.agents.agents.supervisor.tools import (
+from src.agents.specialists.supervisor.tools import (
     RouteToDocumentsTool,
     RouteToWorkflowTool,
     _run_async,
@@ -55,7 +55,7 @@ def _make_task_output(answer: str = "doc answer", thread_id: str = "t1") -> Task
 class TestRouteToDocumentsTool:
     @pytest.fixture(autouse=True)
     def tool(self, settings):
-        with patch("src.agents.agents.supervisor.tools.A2AClient") as MockClient:
+        with patch("src.agents.specialists.supervisor.tools.A2AClient") as MockClient:
             mock_instance = MockClient.return_value
             mock_instance.send_task = AsyncMock(return_value=_make_task_output("doc answer"))
             self._mock_client = mock_instance
@@ -91,7 +91,7 @@ class TestRouteToDocumentsTool:
 class TestRouteToWorkflowTool:
     @pytest.fixture(autouse=True)
     def tool(self, settings):
-        with patch("src.agents.agents.supervisor.tools.A2AClient") as MockClient:
+        with patch("src.agents.specialists.supervisor.tools.A2AClient") as MockClient:
             mock_instance = MockClient.return_value
             mock_instance.send_task = AsyncMock(return_value=_make_task_output("wf answer"))
             self._mock_client = mock_instance

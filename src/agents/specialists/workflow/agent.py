@@ -5,7 +5,16 @@ from typing import Optional
 from crewai import Agent
 
 from src.agents.core.config import Settings, build_llm, get_settings
-from src.agents.agents.workflow.tools import AuthSettingsTool, ChangePasswordTool, WebActionTool
+from src.agents.specialists.workflow.tools import (
+    AuthSettingsTool,
+    ChangePasswordTool,
+    MGSPlusPageFetchTool,
+    SearchPlatformTool,
+    ViewAppointmentsTool,
+    ViewMedicalRecordsTool,
+    WebActionTool,
+)
+from src.agents.specialists.workflow.prompts import BACKSTORY, GOAL, ROLE
 
 
 def build_workflow_agent(settings: Optional[Settings] = None) -> Agent:
@@ -15,25 +24,21 @@ def build_workflow_agent(settings: Optional[Settings] = None) -> Agent:
     llm = build_llm(cfg)
 
     return Agent(
-        role="MGSPlus Platform Workflow Assistant",
-        goal=(
-            "Help users perform tasks on the MGSPlus web platform: "
-            "account management (passwords, 2FA, sessions), "
-            "profile updates, chatbot configuration, and other platform actions. "
-            "Always confirm before taking irreversible actions."
-        ),
-        backstory=(
-            "You are an expert at navigating the MGSPlus platform and assisting users "
-            "with any workflow-related task. You know every feature of the platform and "
-            "can guide users step-by-step or execute actions directly on their behalf."
-        ),
+        role=ROLE,
+        goal=GOAL,
+        backstory=BACKSTORY,
         tools=[
             ChangePasswordTool(settings=cfg),
             AuthSettingsTool(settings=cfg),
             WebActionTool(settings=cfg),
+            ViewAppointmentsTool(settings=cfg),
+            ViewMedicalRecordsTool(settings=cfg),
+            SearchPlatformTool(settings=cfg),
+            MGSPlusPageFetchTool(settings=cfg),
         ],
         llm=llm,
         verbose=True,
         allow_delegation=False,
-        max_iter=5,
+        check_compatibility=False,
+        max_iter=8,
     )

@@ -24,6 +24,9 @@ from src.agents.core.config import get_settings
 def _build_configs() -> List[uvicorn.Config]:
     settings = get_settings()
 
+    from src.agents.core.db.sqlalchemy_engine import init_db
+    init_db()
+
     from src.agents.api.supervisor_app import app as supervisor_app
     from src.agents.api.documents_app import app as documents_app
     from src.agents.api.workflow_app import app as workflow_app
@@ -61,6 +64,10 @@ async def _serve_all() -> None:
 
 def _serve_single(name: str) -> None:
     settings = get_settings()
+
+    from src.agents.core.db.sqlalchemy_engine import init_db
+    init_db()
+
     app_map = {
         "supervisor": ("src.agents.api.supervisor_app:app", settings.supervisor_port),
         "documents": ("src.agents.api.documents_app:app", settings.documents_port),

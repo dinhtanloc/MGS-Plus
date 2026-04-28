@@ -4,6 +4,7 @@ import asyncio
 import concurrent.futures
 from typing import Any, List, Optional, Type
 
+import httpx
 from crewai.tools import BaseTool
 from pydantic import BaseModel, Field
 from qdrant_client.models import Filter, FieldCondition, MatchValue, MatchAny
@@ -94,8 +95,8 @@ class QdrantSearchTool(BaseTool):
         import httpx
         async with httpx.AsyncClient() as client:
             resp = await client.post(
-                f"{self._settings.ollama_base_url}/api/embeddings",
-                json={"model": self._settings.ollama_embedding_model, "prompt": text},
+                f"{self._settings.llm_base_url.rstrip('/v1').rstrip('/')}/api/embeddings",
+                json={"model": self._settings.llm_embedding_model, "prompt": text},
                 timeout=30.0,
             )
             resp.raise_for_status()
@@ -191,6 +192,7 @@ class MCPSearchInput(BaseModel):
         description=(
             "MCP source to query: "
             "'wiki' (Wikipedia — medical definitions, background), "
+            "'web' (live web search via DuckDuckGo), "
             "'zalo', 'messenger' (social platforms)"
         ),
     )
@@ -200,8 +202,7 @@ class MCPSearchTool(BaseTool):
     name: str = "mcp_search"
     description: str = (
         "Search external knowledge sources via MCP (Model Context Protocol). "
-        "Use 'wiki' to look up medical definitions, drug information, or background context "
-        "that may not be in the internal knowledge base. "
+        "Use 'wiki' for Wikipedia lookups, 'web' for live web search. "
         "Only call this when qdrant_search returns no useful results."
     )
     args_schema: Type[BaseModel] = MCPSearchInput
@@ -215,6 +216,7 @@ class MCPSearchTool(BaseTool):
     def _get_mcp_url(self, source: str) -> Optional[str]:
         mapping = {
             "wiki":      self._settings.mcp_wiki_url,
+            "web":       self._settings.mcp_web_url,
             "zalo":      self._settings.mcp_zalo_url,
             "messenger": self._settings.mcp_messenger_url,
         }
@@ -241,7 +243,6 @@ class MCPSearchTool(BaseTool):
                 return "MCP server has no search tool registered."
             result = await client.call_tool(search_tool.name, {"query": query})
             if isinstance(result, list):
-                # Each item may be a dict with {"type": "text", "text": "..."}
                 texts = []
                 for item in result:
                     if isinstance(item, dict):
@@ -252,3 +253,156 @@ class MCPSearchTool(BaseTool):
             return str(result)
         except Exception as exc:
             return f"MCP call failed: {exc}"
+
+
+# ── Web search tool (DuckDuckGo, no API key required) ─────────────────────────
+
+class WebSearchInput(BaseModel):
+    query: str = Field(description="Search query to look up on the web")
+    max_results: int = Field(default=5, ge=1, le=10, description="Number of results (1–10)")
+    region: str = Field(
+        default="vn-vi",
+        description="Region/language: 'vn-vi' (Vietnamese), 'us-en' (English)",
+    )
+
+
+class WebSearchTool(BaseTool):
+    name: str = "web_search"
+    description: str = (
+        "Search the live web using DuckDuckGo for any topic. "
+        "Returns titles, snippets, and URLs of matching web pages. "
+        "Use this for current news, recent medical guidelines, drug prices, "
+        "or any question that needs up-to-date information not in the knowledge base."
+    )
+    args_schema: Type[BaseModel] = WebSearchInput
+
+    def _run(self, query: str, max_results: int = 5, region: str = "vn-vi") -> str:
+        try:
+            from duckduckgo_search import DDGS
+
+            results: list[dict] = []
+            with DDGS() as ddgs:
+                for r in ddgs.text(query, region=region, max_results=max_results):
+                    results.append(r)
+
+            if not results:
+                return f"No web results found for: '{query}'. Try rephrasing."
+
+            lines = [f"Web search results for: '{query}'\n"]
+            for i, r in enumerate(results, 1):
+                lines.append(
+                    f"[{i}] {r.get('title', 'No title')}\n"
+                    f"     URL: {r.get('href', '')}\n"
+                    f"     {r.get('body', '')}\n"
+                )
+            return "\n".join(lines)
+        except Exception as exc:
+            return f"Web search failed: {exc}"
+
+
+# ── Web fetch tool (fetch and parse a URL's text content) ─────────────────────
+
+class WebFetchInput(BaseModel):
+    url: str = Field(description="URL to fetch and read content from")
+    max_chars: int = Field(
+        default=3000,
+        ge=500,
+        le=8000,
+        description="Maximum characters to return (500–8000)",
+    )
+
+
+class WebFetchTool(BaseTool):
+    name: str = "web_fetch"
+    description: str = (
+        "Fetch and extract the readable text from any URL. "
+        "Strips HTML, scripts, ads, and navigation — returns the main article text. "
+        "Use to read full medical articles, official guidelines, or MGSPlus platform pages "
+        "after finding URLs with web_search or wikipedia_search."
+    )
+    args_schema: Type[BaseModel] = WebFetchInput
+
+    def _run(self, url: str, max_chars: int = 3000) -> str:
+        return _run_async(self._fetch(url, max_chars))
+
+    async def _fetch(self, url: str, max_chars: int) -> str:
+        try:
+            from bs4 import BeautifulSoup
+
+            async with httpx.AsyncClient(follow_redirects=True, timeout=15.0) as client:
+                resp = await client.get(
+                    url,
+                    headers={"User-Agent": "MGSPlus/1.0 (medical assistant; contact@mgsplus.vn)"},
+                )
+                resp.raise_for_status()
+
+            soup = BeautifulSoup(resp.text, "lxml")
+            for tag in soup(["script", "style", "nav", "footer", "header", "aside"]):
+                tag.decompose()
+
+            text = soup.get_text(separator="\n", strip=True)
+            lines = [ln for ln in text.splitlines() if ln.strip()]
+            text = "\n".join(lines)[:max_chars]
+
+            return f"[Fetched from {url}]\n\n{text}"
+        except Exception as exc:
+            return f"Could not fetch '{url}': {exc}"
+
+
+# ── Wikipedia direct search tool ──────────────────────────────────────────────
+
+_WIKI_USER_AGENT = "MGSPlus/1.0 (medical assistant; contact@mgsplus.vn)"
+
+
+class WikipediaSearchInput(BaseModel):
+    query: str = Field(description="Topic or article title to look up on Wikipedia")
+    language: str = Field(
+        default="vi",
+        description="Wikipedia language: 'vi' (Vietnamese) or 'en' (English)",
+    )
+    sentences: int = Field(
+        default=6,
+        ge=1,
+        le=20,
+        description="Maximum sentences to return from the article summary",
+    )
+
+
+class WikipediaSearchTool(BaseTool):
+    name: str = "wikipedia_search"
+    description: str = (
+        "Search Wikipedia for encyclopedic information about any topic. "
+        "Supports Vietnamese ('vi') and English ('en') Wikipedia. "
+        "Falls back to English automatically if the Vietnamese page is not found. "
+        "Use for background knowledge, medical definitions, drug descriptions, "
+        "and disease overviews when the knowledge base lacks coverage."
+    )
+    args_schema: Type[BaseModel] = WikipediaSearchInput
+
+    def _run(self, query: str, language: str = "vi", sentences: int = 6) -> str:
+        try:
+            import wikipediaapi
+
+            wiki = wikipediaapi.Wikipedia(language=language, user_agent=_WIKI_USER_AGENT)
+            page = wiki.page(query)
+
+            if not page.exists() and language != "en":
+                wiki = wikipediaapi.Wikipedia(language="en", user_agent=_WIKI_USER_AGENT)
+                page = wiki.page(query)
+
+            if not page.exists():
+                return f"No Wikipedia article found for '{query}'."
+
+            summary = page.summary
+            parts = summary.split(". ")
+            summary = ". ".join(parts[:sentences])
+            if not summary.endswith("."):
+                summary += "."
+
+            return (
+                f"**{page.title}** (Wikipedia/{language})\n\n"
+                f"{summary}\n\n"
+                f"URL: {page.fullurl}"
+            )
+        except Exception as exc:
+            return f"Wikipedia search failed: {exc}"

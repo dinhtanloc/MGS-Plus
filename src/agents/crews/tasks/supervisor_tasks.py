@@ -2,22 +2,16 @@ from __future__ import annotations
 
 from crewai import Agent, Task
 
+from src.agents.specialists.supervisor.prompts import (
+    ROUTE_AND_RESPOND_EXPECTED_OUTPUT,
+    build_route_and_respond_description,
+)
+
 
 def route_and_respond_task(supervisor: Agent, question: str, context: str = "") -> Task:
-    """Primary task: supervisor analyses, routes, and synthesises the final answer."""
+    """Primary task: assistant answers the user question using available tools."""
     return Task(
-        description=(
-            f"User question: {question}\n\n"
-            f"Additional context: {context}\n\n"
-            "Steps:\n"
-            "1. Classify the intent (document/knowledge retrieval OR platform workflow OR general).\n"
-            "2. If retrieval: delegate to Documents agent via route_to_documents_agent tool.\n"
-            "3. If platform task: delegate to Workflow agent via route_to_workflow_agent tool.\n"
-            "4. Synthesise a final, clear, user-friendly answer."
-        ),
-        expected_output=(
-            "A complete, helpful response to the user's question or request, "
-            "written in the same language the user used."
-        ),
+        description=build_route_and_respond_description(question, context),
+        expected_output=ROUTE_AND_RESPOND_EXPECTED_OUTPUT,
         agent=supervisor,
     )

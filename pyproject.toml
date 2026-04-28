@@ -33,6 +33,10 @@ dependencies = [
     "mcp>=1.0.0",
     # Wikipedia MCP
     "wikipedia-api>=0.7.1",
+    # Web search & scraping
+    "duckduckgo-search>=6.0.0",
+    "beautifulsoup4>=4.12.0",
+    "lxml>=5.0.0",
     # Config / schemas
     "pydantic>=2.7.0",
     "pydantic-settings>=2.3.0",
